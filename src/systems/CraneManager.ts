@@ -49,8 +49,8 @@ const BOMB_SPAWN_RATE = 0.025; // 2.5%
 /**
  * Default crane dimensions
  */
-const DEFAULT_CRANE_WIDTH = 16;
-const DEFAULT_CRANE_HEIGHT = 8;
+const DEFAULT_CRANE_WIDTH = 32; // 16 pixels * 2 scale
+const DEFAULT_CRANE_HEIGHT = 28; // 14 pixels * 2 scale
 
 /**
  * Default spawn interval in milliseconds

@@ -530,56 +530,81 @@ const FLOOR_TILE_SPRITE = {
 };
 
 /**
- * Crane rail - horizontal guide bar, 8x4 pixels, repeatable horizontally
+ * Ceiling tile - 8x4 pixels, one row of bricks for room ceiling
+ * Similar to brick wall but horizontal orientation
+ */
+const CEILING_TILE_SPRITE = {
+  pixels: [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 2, 2, 1, 2, 2, 2, 1],
+    [1, 2, 2, 1, 2, 2, 2, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+/**
+ * Crane rail - light bar with bottom outline only, 8x3 pixels, repeatable horizontally
+ * Light fill (2) with dark bottom border (1) - top connects to dark header
  */
 const CRANE_RAIL_SPRITE = {
   pixels: [
-    [1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
+    [2, 2, 2, 2, 2, 2, 2, 2],
+    [2, 2, 2, 2, 2, 2, 2, 2],
     [1, 1, 1, 1, 1, 1, 1, 1],
   ],
 };
 
 /**
- * Crane sprite with closed hooks - positioned at top of screen (16x12 pixels)
- * Hooks grip the crate with 8 pixels distance at touch point (4 pixels each side)
+ * Crane sprite with closed hooks - positioned at top of screen (16x14 pixels)
+ * Light fill (2) with dark outline (1) - visible on light background
  */
 const CRANE_SPRITE = {
   pixels: [
-    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
-    [1, 2, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-    [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+    // Wheels riding on rail (row 0-1)
+    [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0],
+    // Top plate connecting wheels (row 2)
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    // Motor housing - light fill with dark outline and details (row 3-7)
+    [0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 0],
+    [0, 1, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 1, 0],
+    [0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    // Hook arms - closed position, light with dark outline (row 8-13)
+    [0, 0, 0, 0, 1, 2, 1, 0, 0, 1, 2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 2, 1, 0, 0, 1, 2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 2, 1, 0, 0, 1, 2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 2, 2, 1, 1, 2, 2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
   ],
 };
 
 /**
- * Crane sprite with open hooks - positioned at top of screen (16x12 pixels)
- * Hooks are opened to release the crate
+ * Crane sprite with open hooks - positioned at top of screen (16x14 pixels)
+ * Light fill (2) with dark outline (1) - hooks opened wide
  */
 const CRANE_SPRITE_OPEN = {
   pixels: [
-    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
-    [1, 2, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    // Wheels riding on rail (row 0-1)
+    [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0],
+    // Top plate connecting wheels (row 2)
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    // Motor housing - light fill with dark outline and details (row 3-7)
+    [0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 0],
+    [0, 1, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 1, 0],
+    [0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    // Hook arms - open position, light with dark outline (row 8-13)
+    [0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0],
+    [0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0],
+    [0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0],
+    [1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1],
+    [1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1],
     [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   ],
 };
 
@@ -1274,6 +1299,98 @@ export function generateSprite(
 }
 
 /**
+ * Generate an opaque sprite texture (0 = background color instead of transparent)
+ * Used for crates and objects that should have solid background
+ */
+export function generateOpaqueSprite(
+  pixelData: number[][],
+  colors: PaletteColors,
+  app: Application,
+  scale = 1
+): RenderTexture {
+  const height = pixelData.length;
+  const width = pixelData[0]?.length || 0;
+
+  const graphics = new Graphics();
+
+  // First fill entire area with background color
+  graphics.rect(0, 0, width * scale, height * scale);
+  graphics.fill({ color: colors.background });
+
+  // Color mapping: 1 = foreground, 2 = accent (0 already filled with background)
+  const colorMap = [null, colors.foreground, colors.accent];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const value = pixelData[y][x];
+      if (value > 0 && colorMap[value]) {
+        graphics.rect(x * scale, y * scale, scale, scale);
+        graphics.fill({ color: colorMap[value]! });
+      }
+    }
+  }
+
+  // Create render texture
+  const texture = RenderTexture.create({
+    width: width * scale,
+    height: height * scale,
+  });
+
+  app.renderer.render({
+    container: graphics,
+    target: texture,
+  });
+
+  graphics.destroy();
+  return texture;
+}
+
+/**
+ * Generate outlined sprite (1 = black outline, 2 = theme background color)
+ * Used for crane, rail, ceiling - light fill with black outline
+ */
+export function generateOutlinedSprite(
+  pixelData: number[][],
+  colors: PaletteColors,
+  app: Application,
+  scale = 1
+): RenderTexture {
+  const height = pixelData.length;
+  const width = pixelData[0]?.length || 0;
+
+  const graphics = new Graphics();
+
+  // Color mapping: 0 = transparent, 1 = black (outline), 2 = background (theme light)
+  const BLACK = 0x000000;
+  const colorMap: (number | null)[] = [null, BLACK, colors.background];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const value = pixelData[y][x];
+      // Note: colorMap[value] !== null check needed because BLACK (0x000000) is falsy
+      if (value > 0 && colorMap[value] !== null) {
+        graphics.rect(x * scale, y * scale, scale, scale);
+        graphics.fill({ color: colorMap[value]! });
+      }
+    }
+  }
+
+  // Create render texture
+  const texture = RenderTexture.create({
+    width: width * scale,
+    height: height * scale,
+  });
+
+  app.renderer.render({
+    container: graphics,
+    target: texture,
+  });
+
+  graphics.destroy();
+  return texture;
+}
+
+/**
  * Generate an inverted sprite texture (swaps foreground and background colors)
  * Used for crane area elements that appear on dark background
  */
@@ -1383,14 +1500,14 @@ export function generateCharacterAnimationSprites(
 }
 
 /**
- * Generate crate sprite for a given palette
+ * Generate crate sprite for a given palette (opaque - no transparency)
  */
 export function generateCrateSprite(colors: PaletteColors, app: Application): RenderTexture {
-  return generateSprite(CRATE_SPRITE.pixels, colors, app, 2);
+  return generateOpaqueSprite(CRATE_SPRITE.pixels, colors, app, 2);
 }
 
 /**
- * Generate all crate sprites for different types and variants
+ * Generate all crate sprites for different types and variants (opaque - no transparency)
  */
 export function generateAllCrateSprites(
   colors: PaletteColors,
@@ -1398,28 +1515,28 @@ export function generateAllCrateSprites(
 ): Map<string, RenderTexture> {
   const sprites = new Map<string, RenderTexture>();
 
-  // Generate all visual variants for regular crates
+  // Generate all visual variants for regular crates (opaque)
   for (let i = 0; i < CRATE_VARIANTS.length; i++) {
-    sprites.set(`crate_regular_${i}`, generateSprite(CRATE_VARIANTS[i].pixels, colors, app, 2));
+    sprites.set(`crate_regular_${i}`, generateOpaqueSprite(CRATE_VARIANTS[i].pixels, colors, app, 2));
   }
   // Default regular (variant 0)
-  sprites.set('crate_regular', generateSprite(CRATE_SPRITE.pixels, colors, app, 2));
+  sprites.set('crate_regular', generateOpaqueSprite(CRATE_SPRITE.pixels, colors, app, 2));
 
-  // Special block sprites
+  // Special block sprites (opaque)
   sprites.set(
     'crate_extraPoints',
-    generateSprite(CRATE_EXTRA_POINTS_SPRITE.pixels, colors, app, 2)
+    generateOpaqueSprite(CRATE_EXTRA_POINTS_SPRITE.pixels, colors, app, 2)
   );
-  sprites.set('crate_superJump', generateSprite(CRATE_SUPER_JUMP_SPRITE.pixels, colors, app, 2));
-  sprites.set('crate_helmet', generateSprite(CRATE_HELMET_SPRITE.pixels, colors, app, 2));
-  sprites.set('crate_extraLife', generateSprite(CRATE_EXTRA_LIFE_SPRITE.pixels, colors, app, 2));
+  sprites.set('crate_superJump', generateOpaqueSprite(CRATE_SUPER_JUMP_SPRITE.pixels, colors, app, 2));
+  sprites.set('crate_helmet', generateOpaqueSprite(CRATE_HELMET_SPRITE.pixels, colors, app, 2));
+  sprites.set('crate_extraLife', generateOpaqueSprite(CRATE_EXTRA_LIFE_SPRITE.pixels, colors, app, 2));
 
-  // Bomb sprite
-  sprites.set('crate_bomb', generateSprite(CRATE_BOMB_SPRITE.pixels, colors, app, 2));
+  // Bomb sprite (opaque)
+  sprites.set('crate_bomb', generateOpaqueSprite(CRATE_BOMB_SPRITE.pixels, colors, app, 2));
 
-  // Colored crate sprites for match-3 mechanics
+  // Colored crate sprites for match-3 mechanics (opaque)
   for (const [colorName, pattern] of Object.entries(COLORED_CRATE_PATTERNS)) {
-    sprites.set(`crate_${colorName}`, generateSprite(pattern.pixels, colors, app, 2));
+    sprites.set(`crate_${colorName}`, generateOpaqueSprite(pattern.pixels, colors, app, 2));
   }
 
   return sprites;
@@ -1434,36 +1551,40 @@ export function getCrateVariantCount(): number {
 
 /**
  * Generate crane sprite for a given palette (closed hooks)
+ * Light fill with black outline
  */
 export function generateCraneSprite(colors: PaletteColors, app: Application): RenderTexture {
-  return generateSprite(CRANE_SPRITE.pixels, colors, app, 2);
+  return generateOutlinedSprite(CRANE_SPRITE.pixels, colors, app, 2);
 }
 
 /**
  * Generate crane sprite with open hooks for a given palette
+ * Light fill with black outline
  */
 export function generateCraneOpenSprite(colors: PaletteColors, app: Application): RenderTexture {
-  return generateSprite(CRANE_SPRITE_OPEN.pixels, colors, app, 2);
+  return generateOutlinedSprite(CRANE_SPRITE_OPEN.pixels, colors, app, 2);
 }
 
 /**
- * Generate inverted crane sprite (light on dark background, closed hooks)
+ * Generate inverted crane sprite (same as regular - now uses outlined style)
+ * @deprecated Use generateCraneSprite instead
  */
 export function generateInvertedCraneSprite(
   colors: PaletteColors,
   app: Application
 ): RenderTexture {
-  return generateInvertedSprite(CRANE_SPRITE.pixels, colors, app, 2);
+  return generateOutlinedSprite(CRANE_SPRITE.pixels, colors, app, 2);
 }
 
 /**
- * Generate inverted crane sprite with open hooks (light on dark background)
+ * Generate inverted crane sprite with open hooks (same as regular - now uses outlined style)
+ * @deprecated Use generateCraneOpenSprite instead
  */
 export function generateInvertedCraneOpenSprite(
   colors: PaletteColors,
   app: Application
 ): RenderTexture {
-  return generateInvertedSprite(CRANE_SPRITE_OPEN.pixels, colors, app, 2);
+  return generateOutlinedSprite(CRANE_SPRITE_OPEN.pixels, colors, app, 2);
 }
 
 /**
@@ -1495,12 +1616,9 @@ export function generateEnvironmentSprites(
 
   sprites.set('brick_wall', generateSprite(BRICK_WALL_SPRITE.pixels, colors, app, 2));
   sprites.set('floor_tile', generateSprite(FLOOR_TILE_SPRITE.pixels, colors, app, 2));
-  sprites.set('crane_rail', generateSprite(CRANE_RAIL_SPRITE.pixels, colors, app, 2));
-  // Inverted versions for dark header area
-  sprites.set(
-    'crane_rail_inverted',
-    generateInvertedSprite(CRANE_RAIL_SPRITE.pixels, colors, app, 2)
-  );
+  // Ceiling and rail use outlined style (black outline, theme light fill)
+  sprites.set('ceiling_tile', generateOutlinedSprite(CEILING_TILE_SPRITE.pixels, colors, app, 2));
+  sprites.set('crane_rail', generateOutlinedSprite(CRANE_RAIL_SPRITE.pixels, colors, app, 2));
 
   return sprites;
 }

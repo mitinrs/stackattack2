@@ -30,8 +30,7 @@ const LOGICAL_HEIGHT = 320;
 const CRANE_AREA_Y = 35;
 const GROUND_Y = DEFAULT_GRID_CONFIG.groundY;
 
-// Spawn zone dithering constants
-const SPAWN_ZONE_HEIGHT = 80; // Height of the dithered spawn zone
+// Dithering constants for room atmosphere
 const DITHER_PIXEL_SIZE = 2; // Size of each dither pixel
 
 // Minimum mobile touch target size (44x44px recommended by Apple/Google)
@@ -233,9 +232,10 @@ export class GameScene extends Scene {
   }
 
   /**
-   * Create dithered spawn zone effect at the top of the screen
-   * Creates a gradient dithering pattern that transitions from dark header to light game area
-   * Uses foreground (dark) pixels on light background, dense at top becoming sparse at bottom
+   * Create dithered room atmosphere effect
+   * Creates a gradient dithering pattern across the entire room height
+   * Dense at top (ceiling), becoming sparse toward the bottom (floor)
+   * Gradient never becomes fully black - stays in palette colors
    */
   private createSpawnZoneDithering(colors: { foreground: number; background: number }): void {
     // Remove existing dithering if any
@@ -246,14 +246,30 @@ export class GameScene extends Scene {
 
     this.ditheringGraphics = new Graphics();
 
-    // Create dithering pattern - denser at top (header), sparser at bottom (game area)
-    // This creates dark pixels on light background, transitioning into dark header
-    for (let y = CRANE_AREA_Y; y < CRANE_AREA_Y + SPAWN_ZONE_HEIGHT; y += DITHER_PIXEL_SIZE) {
-      // Calculate density based on vertical position (1.0 at top, 0.0 at bottom)
-      const progress = (y - CRANE_AREA_Y) / SPAWN_ZONE_HEIGHT;
-      const density = 1.0 - progress; // Dense at top, sparse at bottom
+    // Gradient starts after ceiling (8px) and rail (6px) below CRANE_AREA_Y
+    const ceilingAndRailHeight = 8 + 6; // ceiling + rail
+    const gradientStartY = CRANE_AREA_Y + ceilingAndRailHeight;
+    // Room height from after ceiling to floor
+    const roomHeight = GROUND_Y - gradientStartY;
+    // Gradient only in upper half of room (from ceiling to middle)
+    const gradientHeight = roomHeight / 2;
+    const gradientEndY = gradientStartY + gradientHeight;
 
-      for (let x = 0; x < LOGICAL_WIDTH; x += DITHER_PIXEL_SIZE) {
+    // Gradient only in play area (between walls), not on walls
+    const gridLeftX = getGridLeftX(DEFAULT_GRID_CONFIG);
+    const gridRightX = getGridRightX(DEFAULT_GRID_CONFIG);
+
+    // Create dithering pattern only in upper half of room, within play area
+    // Denser at top (after ceiling), fading to zero at middle of room
+    for (let y = gradientStartY; y < gradientEndY; y += DITHER_PIXEL_SIZE) {
+      // Calculate density based on vertical position within gradient zone
+      // At top (y = gradientStartY): progress = 0, density = 0.5 (50% light)
+      // At middle (y = gradientEndY): progress = 1, density = 0 (no dithering)
+      const progress = (y - gradientStartY) / gradientHeight;
+      // Linear gradient from 50% to 0%
+      const density = 0.5 * (1.0 - progress);
+
+      for (let x = gridLeftX; x < gridRightX; x += DITHER_PIXEL_SIZE) {
         // Use ordered dithering pattern (Bayer matrix style)
         const ditherX = Math.floor(x / DITHER_PIXEL_SIZE) % 4;
         const ditherY = Math.floor(y / DITHER_PIXEL_SIZE) % 4;
@@ -341,19 +357,39 @@ export class GameScene extends Scene {
       this.environmentContainer.addChild(floorContainer);
     }
 
-    // Create crane rail (spans play area width) - use inverted version for dark header
-    const invertedRailTexture = this.assetLoader?.getEnvironmentSprite(
-      'crane_rail_inverted',
+    // Create ceiling (one row of bricks) - light with black outline
+    // Ceiling is at CRANE_AREA_Y, below the dark header
+    const ceilingTileHeight = 8; // 4 pixels * 2 scale
+    const ceilingTexture = this.assetLoader?.getEnvironmentSprite(
+      'ceiling_tile',
       this.lcdEffect.getCurrentPalette()
     );
-    if (invertedRailTexture) {
-      const railContainer = new Container();
-      const railWidth = LOGICAL_WIDTH;
-      const tilesNeeded = Math.ceil(railWidth / tileSize);
+    if (ceilingTexture) {
+      const ceilingContainer = new Container();
+      const tilesNeeded = Math.ceil(LOGICAL_WIDTH / tileSize);
 
       for (let i = 0; i < tilesNeeded; i++) {
-        const railSprite = new Sprite(invertedRailTexture);
-        railSprite.position.set(i * tileSize, CRANE_AREA_Y - tileSize);
+        const ceilingSprite = new Sprite(ceilingTexture);
+        ceilingSprite.position.set(i * tileSize, CRANE_AREA_Y);
+        ceilingContainer.addChild(ceilingSprite);
+      }
+      this.environmentContainer.addChild(ceilingContainer);
+    }
+
+    // Create crane rail (spans play area width) - light with black outline
+    // Rail is below ceiling
+    const railTexture = this.assetLoader?.getEnvironmentSprite(
+      'crane_rail',
+      this.lcdEffect.getCurrentPalette()
+    );
+    const railTileHeight = 6; // 3 pixels * 2 scale
+    if (railTexture) {
+      const railContainer = new Container();
+      const tilesNeeded = Math.ceil(LOGICAL_WIDTH / tileSize);
+
+      for (let i = 0; i < tilesNeeded; i++) {
+        const railSprite = new Sprite(railTexture);
+        railSprite.position.set(i * tileSize, CRANE_AREA_Y + ceilingTileHeight);
         railContainer.addChild(railSprite);
       }
       this.environmentContainer.addChild(railContainer);
@@ -835,10 +871,12 @@ export class GameScene extends Scene {
     });
     this.crateLayer.addChild(this.crateManager);
 
-    // Crane manager
+    // Crane manager - crane positioned below rail, top pixels touching rail bottom
+    // Layout: ceiling (8px) + rail (6px) + crane (28px) = 42px below CRANE_AREA_Y
+    // Crane bottom = CRANE_AREA_Y + 8 + 6 + 28 = 77
     this.craneManager = new CraneManager({
       gridConfig: DEFAULT_GRID_CONFIG,
-      craneTopY: CRANE_AREA_Y,
+      craneTopY: CRANE_AREA_Y + 8 + 6 + 28,
     });
     this.gameLayer.addChild(this.craneManager);
 
