@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: stackattack2:latest
     container_name: stackattack2
     restart: unless-stopped
     networks:
