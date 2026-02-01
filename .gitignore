@@ -26,3 +26,4 @@ dist-ssr
 # Temporary files
 .playwright-mcp/
 sprites\ md
+agent-os/
