@@ -1,5 +1,7 @@
 # Deployment Guide
 
+This guide covers deploying Stack Attack 2 Pro to your own server using Docker and GitHub Actions.
+
 ## Architecture
 
 ```
@@ -7,58 +9,156 @@ Push to main/master
     ↓
 GitHub Actions:
     ├→ Test (lint, test, build)
-    └→ Build & push image: ghcr.io/mitinrs/stackattack2:latest
+    └→ Build & push image to ghcr.io
         ↓
-Portainer (VPS):
-    └→ stackattack2 container (auto-updated by Watchtower)
+Your Server:
+    └→ Docker container (manual or auto-updated)
         ↓
-    Traefik (reverse proxy + HTTPS)
+    Reverse proxy (Traefik/Nginx) + HTTPS
         ↓
-    https://stackattack2.pusk365.ru
+    https://your-domain.com
 ```
 
-## Initial Setup on Portainer
+## Quick Start (Using Pre-built Image)
 
-### 1. Create Stack
+The public Docker image is available at:
+```bash
+docker pull ghcr.io/mitinrs/stackattack2:latest
+```
 
-1. Go to Portainer → Stacks → Add stack
-2. Name: `stackattack2`
-3. Paste contents of `docker-compose.yml`
-4. Deploy the stack
+Run locally:
+```bash
+docker run -p 8080:80 ghcr.io/mitinrs/stackattack2:latest
+# Open http://localhost:8080
+```
 
-### 2. Configure Registry Access (if repo is private)
+## Self-Hosted Deployment
 
-1. Portainer → Registries → Add registry
-2. Select "GitHub Container Registry"
-3. Username: `mitinrs`
-4. Password: GitHub Personal Access Token with `read:packages` scope
+### Option 1: Fork and Deploy Your Own
 
-## Deployment Methods
+1. **Fork the repository** on GitHub
 
-### Automatic (Recommended)
+2. **Enable GitHub Actions** in your fork (Actions tab → Enable)
 
-Push to `main` or `master` branch → GitHub Actions builds image → Watchtower auto-updates container
+3. **GitHub Actions will automatically:**
+   - Run tests on every push
+   - Build and push Docker image to `ghcr.io/<your-username>/stackattack2:latest`
 
-### Manual via GitHub
+4. **Make the package public** (optional but recommended):
+   - Go to your fork → Packages → stackattack2 → Package settings
+   - Change visibility to Public
 
-1. Go to repository → Actions → "Deploy to VPS"
-2. Click "Run workflow"
+5. **Deploy to your server** using the image `ghcr.io/<your-username>/stackattack2:latest`
 
-### Manual via Portainer
+### Option 2: Use Original Image
 
-1. Portainer → Stacks → stackattack2
-2. Click "Pull and redeploy"
+Deploy using the pre-built image from this repository.
 
-## Monitoring
+## Server Setup with Docker Compose
 
-- **GitHub Actions logs:** Repository → Actions → Deploy to VPS
-- **Portainer logs:** Containers → stackattack2 → Logs
-- **Health check:** https://stackattack2.pusk365.ru/health
-- **Application:** https://stackattack2.pusk365.ru
+### docker-compose.yml
+
+```yaml
+services:
+  stackattack2:
+    image: ghcr.io/mitinrs/stackattack2:latest
+    container_name: stackattack2
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+```
+
+### With Traefik (HTTPS)
+
+```yaml
+services:
+  stackattack2:
+    image: ghcr.io/mitinrs/stackattack2:latest
+    container_name: stackattack2
+    restart: unless-stopped
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stackattack2.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.stackattack2.entrypoints=websecure"
+      - "traefik.http.routers.stackattack2.tls.certresolver=letsencrypt"
+      - "traefik.http.services.stackattack2.loadbalancer.server.port=80"
+
+networks:
+  traefik_public:
+    external: true
+```
+
+## Portainer Setup
+
+### 1. Add Registry (Required for ghcr.io)
+
+Even for public packages, ghcr.io requires authentication:
+
+1. **Portainer** → **Settings** → **Registries** → **Add registry**
+2. Select **Custom registry**
+3. Fill in:
+   - **Name:** `GitHub Container Registry`
+   - **Registry URL:** `ghcr.io`
+   - **Authentication:** Enable
+   - **Username:** Your GitHub username
+   - **Password:** GitHub Personal Access Token with `read:packages` scope
+
+### 2. Create Stack
+
+1. **Portainer** → **Stacks** → **Add stack**
+2. **Name:** `stackattack2`
+3. **Build method:** Choose one:
+   - **Web editor:** Paste docker-compose.yml contents
+   - **Repository:** Use Git URL `https://github.com/mitinrs/stackattack2`
+4. **Deploy the stack**
+
+### 3. Update Container
+
+- **Manual:** Stacks → stackattack2 → "Pull and redeploy"
+- **Automatic:** Use [Watchtower](https://containrrr.dev/watchtower/) to auto-update
+
+## Creating GitHub PAT
+
+1. GitHub → Settings → Developer settings → Personal access tokens → **Tokens (classic)**
+2. **Generate new token (classic)**
+3. Select scope: `read:packages`
+4. Copy the token (you won't see it again)
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Run tests
+npm run test
+
+# Build for production
+npm run build
+
+# Build Docker image locally
+docker build -t stackattack2 .
+
+# Run local Docker build
+docker run -p 8080:80 stackattack2
+```
 
 ## Troubleshooting
 
-### Image not updating
+### Image pull denied
+
+```
+Error: denied: denied
+```
+
+**Solution:** Add ghcr.io registry with authentication in Portainer (see above).
+
+### Container not updating
 
 ```bash
 # Force pull and recreate
@@ -66,21 +166,20 @@ docker pull ghcr.io/mitinrs/stackattack2:latest
 docker compose up -d --force-recreate
 ```
 
-### Check container status
+### Check container logs
 
 ```bash
 docker logs stackattack2
-docker inspect stackattack2
 ```
 
-## Local Development
+### Verify image version
 
 ```bash
-# Build image locally
-docker build -t stackattack2 .
-
-# Run locally
-docker run -p 8080:80 stackattack2
-
-# Open http://localhost:8080
+docker inspect ghcr.io/mitinrs/stackattack2:latest | grep -i created
 ```
+
+## Links
+
+- **Demo:** https://stackattack2.pusk365.ru
+- **Repository:** https://github.com/mitinrs/stackattack2
+- **Docker Image:** https://ghcr.io/mitinrs/stackattack2
