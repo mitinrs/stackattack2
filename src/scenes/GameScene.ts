@@ -27,7 +27,7 @@ import { getCharacterById } from '../config/characters';
 // Game area constants
 const LOGICAL_WIDTH = 224; // 12 columns × 16px + 16px walls × 2 = 224px
 const LOGICAL_HEIGHT = 320;
-const CRANE_AREA_Y = 35;
+const CRANE_AREA_Y = 19; // Raised by 16px to give more play area
 const GROUND_Y = DEFAULT_GRID_CONFIG.groundY;
 
 // Dithering constants for room atmosphere

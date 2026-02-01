@@ -38,7 +38,7 @@ export const DEFAULT_GRID_CONFIG: GridConfig = {
   rows: 15,
   cellWidth: 16,
   cellHeight: 16,
-  groundY: 290, // Bottom of play area
+  groundY: 306, // Bottom of play area (moved down by 16px)
   topThresholdY: 50, // Top threshold for game over
 };
 
