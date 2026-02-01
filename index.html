@@ -4,10 +4,39 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>stack-attack-2-pro</title>
+    <meta name="description" content="Stack Attack 2 Pro - Classic LCD mobile game recreated for the web" />
+    <title>Stack Attack 2 Pro</title>
   </head>
   <body>
     <div id="app"></div>
+
+    <!-- Mobile touch controls - positioned below game canvas -->
+    <div class="mobile-controls" id="mobile-controls">
+      <div class="mobile-controls-top">
+        <button class="mobile-btn mobile-btn-pause" id="btn-pause" aria-label="Pause">
+          <svg viewBox="0 0 24 24">
+            <rect x="6" y="5" width="4" height="14" rx="1"/>
+            <rect x="14" y="5" width="4" height="14" rx="1"/>
+          </svg>
+        </button>
+      </div>
+      <div class="mobile-controls-bottom">
+        <div class="mobile-controls-left">
+          <button class="mobile-btn" id="btn-left" aria-label="Move Left">
+            <svg viewBox="0 0 24 24"><polyline points="15,6 9,12 15,18"/></svg>
+          </button>
+          <button class="mobile-btn" id="btn-right" aria-label="Move Right">
+            <svg viewBox="0 0 24 24"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
+        </div>
+        <div class="mobile-controls-right">
+          <button class="mobile-btn" id="btn-jump" aria-label="Jump">
+            <svg viewBox="0 0 24 24"><polyline points="6,15 12,9 18,15"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

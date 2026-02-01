@@ -1,0 +1,21 @@
+services:
+  stackattack2-app:
+    image: ghcr.io/mitinrs/stackattack2:latest
+    container_name: stackattack2
+    restart: unless-stopped
+    networks:
+      - traefik_public
+    labels:
+      # Traefik configuration
+      - "traefik.enable=true"
+      - "traefik.http.routers.stackattack2.rule=Host(`stackattack2.pusk365.ru`)"
+      - "traefik.http.routers.stackattack2.entrypoints=websecure"
+      - "traefik.http.routers.stackattack2.tls=true"
+      - "traefik.http.routers.stackattack2.tls.certresolver=letsencrypt"
+      - "traefik.http.services.stackattack2.loadbalancer.server.port=80"
+      # Watchtower auto-update
+      - "com.centurylinklabs.watchtower.enable=true"
+
+networks:
+  traefik_public:
+    external: true

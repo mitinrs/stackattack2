@@ -1,0 +1,966 @@
+/**
+ * SpriteGenerator - Creates pixel art sprites programmatically
+ *
+ * Generates simple geometric pixel art sprites for all game entities
+ * matching the authentic LCD aesthetic with support for Blue/Amber palettes.
+ */
+
+import { Graphics, RenderTexture, Application } from 'pixi.js';
+import type { PaletteColors } from '../systems/LCDEffect';
+
+/**
+ * Character sprite definitions - Based on reference pixel art
+ * Main character is 8x16 pixels (exactly 2 crates tall)
+ * Includes animation frames for: idle (3 directions), walk (3 frames), push (3 frames), jump
+ */
+
+// === IDLE STATES ===
+
+// Idle - Looking at camera (front view)
+const CHARACTER_IDLE_FRONT = {
+  name: 'idle_front',
+  pixels: [
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 1, 0, 0, 1, 1, 0],
+    [0, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+  ],
+};
+
+// Idle - Looking right (mirror for left)
+const CHARACTER_IDLE_RIGHT = {
+  name: 'idle_right',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 1, 1, 0, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 0, 0, 1, 0, 1],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+  ],
+};
+
+// Idle - Looking up
+const CHARACTER_IDLE_UP = {
+  name: 'idle_up',
+  pixels: [
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 1, 0, 0, 1, 1, 0],
+    [0, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 1, 1, 0, 0, 1, 1, 0],
+    [1, 0, 1, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 1, 1, 0, 0, 1, 1, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1],
+    [1, 1, 1, 0, 0, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+  ],
+};
+
+// === JUMP / FALL ===
+
+const CHARACTER_JUMP = {
+  name: 'jump',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 1],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 0, 0, 1, 0, 1, 0, 1],
+    [1, 1, 1, 1, 0, 1, 0, 1],
+    [1, 0, 0, 1, 0, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 0, 1, 1, 1, 1],
+    [0, 1, 1, 0, 0, 1, 1, 0],
+  ],
+};
+
+// === WALK ANIMATION (right direction, mirror for left) ===
+// Sequence: walk1 -> walk2 -> walk1 -> walk3
+
+const CHARACTER_WALK1 = {
+  name: 'walk1',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 0, 0],
+    [0, 1, 0, 1, 0, 1, 0, 0],
+    [0, 1, 0, 1, 0, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [0, 1, 0, 0, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+  ],
+};
+
+const CHARACTER_WALK2 = {
+  name: 'walk2',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 0, 1, 0, 1, 0],
+    [0, 0, 1, 0, 1, 1, 0, 1],
+    [0, 0, 1, 1, 0, 1, 0, 1],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 0, 0, 0, 0, 0],
+  ],
+};
+
+const CHARACTER_WALK3 = {
+  name: 'walk3',
+  pixels: [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 0, 1, 0, 1, 1, 0],
+    [1, 0, 1, 1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 0, 0, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+// === PUSH ANIMATION (right direction, mirror for left) ===
+// Sequence: push1 -> push2 -> push3
+
+const CHARACTER_PUSH1 = {
+  name: 'push1',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1],
+    [0, 0, 1, 0, 0, 1, 0, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 0, 0, 0, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [1, 1, 1, 1, 1, 0, 0, 0],
+    [1, 1, 1, 1, 1, 0, 0, 0],
+    [1, 1, 1, 1, 1, 0, 0, 0],
+  ],
+};
+
+const CHARACTER_PUSH2 = {
+  name: 'push2',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1],
+    [0, 0, 1, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 1, 0, 1],
+    [0, 1, 1, 0, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 0, 0, 1, 1, 1],
+    [1, 1, 1, 0, 0, 1, 1, 1],
+  ],
+};
+
+const CHARACTER_PUSH3 = {
+  name: 'push3',
+  pixels: [
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 1, 0, 1],
+    [0, 1, 0, 0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 0, 0, 1, 0, 1, 0],
+    [0, 1, 1, 1, 1, 0, 1, 0],
+    [0, 1, 0, 0, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 0, 0, 0],
+    [0, 1, 1, 1, 1, 0, 0, 0],
+    [1, 1, 1, 1, 1, 0, 0, 0],
+    [1, 1, 1, 1, 1, 0, 0, 0],
+  ],
+};
+
+/**
+ * All character animation frames
+ * Idle sequence: up -> front -> left -> front -> right -> front -> up
+ * Walk sequence: walk1 -> walk2 -> walk1 -> walk3
+ * Push sequence: push1 -> push2 -> push3
+ */
+const CHARACTER_ANIMATIONS = {
+  // Idle states
+  idle_front: CHARACTER_IDLE_FRONT,
+  idle_right: CHARACTER_IDLE_RIGHT,
+  idle_up: CHARACTER_IDLE_UP,
+  // Legacy alias
+  idle: CHARACTER_IDLE_FRONT,
+  // Jump/fall
+  jump: CHARACTER_JUMP,
+  // Walk frames (right direction)
+  walk1: CHARACTER_WALK1,
+  walk2: CHARACTER_WALK2,
+  walk3: CHARACTER_WALK3,
+  // Push frames (right direction)
+  push1: CHARACTER_PUSH1,
+  push2: CHARACTER_PUSH2,
+  push3: CHARACTER_PUSH3,
+};
+
+/**
+ * Character sprites array
+ * All characters use the same 8x16 base sprite (different colors applied via palette)
+ */
+const CHARACTER_SPRITES = [CHARACTER_IDLE_FRONT];
+
+/**
+ * Crate visual variants - 5 different looks for regular crates
+ * All are 8x8 pixels, inspired by original Stack Attack
+ */
+const CRATE_VARIANTS = [
+  // Variant 0: Simple box with center hole
+  {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+  },
+  // Variant 1: X pattern (like original)
+  {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 0, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 0, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+  },
+  // Variant 2: Face pattern (eyes and mouth)
+  {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+  },
+  // Variant 3: Horizontal stripes
+  {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1],
+    ],
+  },
+  // Variant 4: Diagonal pattern
+  {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 1, 0, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 0, 0, 1, 0, 0, 1],
+      [1, 0, 0, 1, 0, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 0, 0, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+  },
+];
+
+// Default crate sprite (variant 0)
+const CRATE_SPRITE = CRATE_VARIANTS[0];
+
+/**
+ * Colored crate patterns - Each color has a distinctive pattern
+ * Used for match-3 mechanics
+ */
+const COLORED_CRATE_PATTERNS = {
+  // Red: Cross pattern
+  red: {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 1, 1, 0, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 0, 0, 1, 1, 1],
+      [1, 1, 1, 0, 0, 1, 1, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1],
+      [1, 0, 0, 1, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    accentColor: 0xff4444, // Red accent
+  },
+  // Blue: Diamond pattern
+  blue: {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 0, 1],
+      [1, 0, 0, 1, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    accentColor: 0x4444ff, // Blue accent
+  },
+  // Green: Circle pattern
+  green: {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 1, 1, 0, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 0, 0, 0, 0, 1, 1],
+      [1, 1, 0, 0, 0, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 0, 1, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    accentColor: 0x44ff44, // Green accent
+  },
+  // Yellow: Star/Square pattern
+  yellow: {
+    pixels: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 0, 0, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 0, 0, 1, 1, 0, 0, 1],
+      [1, 0, 0, 1, 1, 0, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1],
+      [1, 1, 0, 0, 0, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    accentColor: 0xffff44, // Yellow accent
+  },
+};
+
+/**
+ * Bomb crate sprite - Circular bomb with fuse (8x8 pixels)
+ */
+const CRATE_BOMB_SPRITE = {
+  pixels: [
+    [0, 0, 1, 2, 2, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 0, 1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1, 0, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+  ],
+};
+
+/**
+ * Extra Points crate - $ money sign pattern (8x8 pixels)
+ * Looks like crossed lines for "bonus"
+ */
+const CRATE_EXTRA_POINTS_SPRITE = {
+  pixels: [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 2, 0, 2, 2, 0, 2, 1],
+    [1, 0, 2, 0, 0, 2, 0, 1],
+    [1, 2, 0, 2, 2, 0, 2, 1],
+    [1, 2, 0, 2, 2, 0, 2, 1],
+    [1, 0, 2, 0, 0, 2, 0, 1],
+    [1, 2, 0, 2, 2, 0, 2, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+/**
+ * Super Jump crate - bold up arrow pattern (8x8 pixels)
+ */
+const CRATE_SUPER_JUMP_SPRITE = {
+  pixels: [
+    [1, 1, 1, 2, 2, 1, 1, 1],
+    [1, 1, 2, 2, 2, 2, 1, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+/**
+ * Helmet crate - dome/shield shape pattern (8x8 pixels)
+ */
+const CRATE_HELMET_SPRITE = {
+  pixels: [
+    [1, 1, 2, 2, 2, 2, 1, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 0, 0, 2, 2, 1],
+    [1, 2, 0, 0, 0, 0, 2, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+/**
+ * Extra Life crate - medical cross pattern (8x8 pixels)
+ */
+const CRATE_EXTRA_LIFE_SPRITE = {
+  pixels: [
+    [1, 1, 1, 2, 2, 1, 1, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 0, 0, 2, 2, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+/**
+ * Brick wall tile - 8x8 pixels, repeatable vertically
+ */
+const BRICK_WALL_SPRITE = {
+  pixels: [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0],
+    [1, 0, 0, 0, 1, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0],
+  ],
+};
+
+/**
+ * Floor tile - 8x8 pixels, repeatable horizontally
+ */
+const FLOOR_TILE_SPRITE = {
+  pixels: [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 0, 1, 1, 0, 0],
+    [1, 1, 0, 0, 1, 1, 0, 0],
+    [0, 0, 1, 1, 0, 0, 1, 1],
+    [0, 0, 1, 1, 0, 0, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ],
+};
+
+/**
+ * Crane rail - horizontal guide bar, 8x4 pixels, repeatable horizontally
+ */
+const CRANE_RAIL_SPRITE = {
+  pixels: [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+/**
+ * Crane sprite with closed hooks - positioned at top of screen (16x12 pixels)
+ * Hooks grip the crate with 8 pixels distance at touch point (4 pixels each side)
+ */
+const CRANE_SPRITE = {
+  pixels: [
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
+    [1, 2, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+  ],
+};
+
+/**
+ * Crane sprite with open hooks - positioned at top of screen (16x12 pixels)
+ * Hooks are opened to release the crate
+ */
+const CRANE_SPRITE_OPEN = {
+  pixels: [
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
+    [1, 2, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  ],
+};
+
+/**
+ * UI element sprites
+ */
+const LOCK_ICON = {
+  pixels: [
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 1, 1, 1, 1, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+};
+
+const ARROW_LEFT = {
+  pixels: [
+    [0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0],
+    [0, 1, 1, 1, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 0, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0],
+  ],
+};
+
+const ARROW_RIGHT = {
+  pixels: [
+    [0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0],
+    [0, 0, 0, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 1, 1, 1, 0],
+    [0, 0, 0, 1, 1, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0],
+  ],
+};
+
+const ARROW_UP = {
+  pixels: [
+    [0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 0, 0],
+  ],
+};
+
+const BUTTON_A = {
+  pixels: [
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [1, 2, 0, 1, 1, 0, 2, 1],
+    [1, 2, 1, 0, 0, 1, 2, 1],
+    [1, 2, 1, 1, 1, 1, 2, 1],
+    [1, 2, 1, 0, 0, 1, 2, 1],
+    [1, 2, 2, 2, 2, 2, 2, 1],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+  ],
+};
+
+export interface SpritePixelData {
+  pixels: number[][];
+}
+
+/**
+ * Generate a sprite texture from pixel data
+ */
+export function generateSprite(
+  pixelData: number[][],
+  colors: PaletteColors,
+  app: Application,
+  scale = 1
+): RenderTexture {
+  const height = pixelData.length;
+  const width = pixelData[0]?.length || 0;
+
+  const graphics = new Graphics();
+
+  // Color mapping: 0 = transparent, 1 = foreground, 2 = accent
+  const colorMap = [null, colors.foreground, colors.accent];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const value = pixelData[y][x];
+      if (value > 0 && colorMap[value]) {
+        graphics.rect(x * scale, y * scale, scale, scale);
+        graphics.fill({ color: colorMap[value]! });
+      }
+    }
+  }
+
+  // Create render texture
+  const texture = RenderTexture.create({
+    width: width * scale,
+    height: height * scale,
+  });
+
+  app.renderer.render({
+    container: graphics,
+    target: texture,
+  });
+
+  graphics.destroy();
+  return texture;
+}
+
+/**
+ * Generate an inverted sprite texture (swaps foreground and background colors)
+ * Used for crane area elements that appear on dark background
+ */
+export function generateInvertedSprite(
+  pixelData: number[][],
+  colors: PaletteColors,
+  app: Application,
+  scale = 1
+): RenderTexture {
+  const height = pixelData.length;
+  const width = pixelData[0]?.length || 0;
+
+  const graphics = new Graphics();
+
+  // Inverted color mapping: 0 = transparent, 1 = background (light), 2 = glow
+  const colorMap = [null, colors.background, colors.glow];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const value = pixelData[y][x];
+      if (value > 0 && colorMap[value]) {
+        graphics.rect(x * scale, y * scale, scale, scale);
+        graphics.fill({ color: colorMap[value]! });
+      }
+    }
+  }
+
+  // Create render texture
+  const texture = RenderTexture.create({
+    width: width * scale,
+    height: height * scale,
+  });
+
+  app.renderer.render({
+    container: graphics,
+    target: texture,
+  });
+
+  graphics.destroy();
+  return texture;
+}
+
+/**
+ * Generate all character sprites for a given palette
+ */
+export function generateCharacterSprites(
+  colors: PaletteColors,
+  app: Application
+): Map<string, RenderTexture> {
+  const sprites = new Map<string, RenderTexture>();
+
+  CHARACTER_SPRITES.forEach((char, index) => {
+    const texture = generateSprite(char.pixels, colors, app, 2);
+    sprites.set(`character_${index + 1}`, texture);
+    sprites.set(char.name, texture);
+  });
+
+  return sprites;
+}
+
+/**
+ * Character animation frame names
+ */
+export type CharacterAnimationFrame =
+  | 'idle'
+  | 'idle_front'
+  | 'idle_right'
+  | 'idle_up'
+  | 'walk1'
+  | 'walk2'
+  | 'walk3'
+  | 'push1'
+  | 'push2'
+  | 'push3'
+  | 'jump';
+
+/**
+ * Generate all character animation sprites for the main character
+ * Returns textures for all animation frames
+ */
+export function generateCharacterAnimationSprites(
+  colors: PaletteColors,
+  app: Application
+): Map<CharacterAnimationFrame, RenderTexture> {
+  const sprites = new Map<CharacterAnimationFrame, RenderTexture>();
+
+  // Idle states
+  sprites.set('idle', generateSprite(CHARACTER_ANIMATIONS.idle.pixels, colors, app, 2));
+  sprites.set('idle_front', generateSprite(CHARACTER_ANIMATIONS.idle_front.pixels, colors, app, 2));
+  sprites.set('idle_right', generateSprite(CHARACTER_ANIMATIONS.idle_right.pixels, colors, app, 2));
+  sprites.set('idle_up', generateSprite(CHARACTER_ANIMATIONS.idle_up.pixels, colors, app, 2));
+
+  // Walk frames
+  sprites.set('walk1', generateSprite(CHARACTER_ANIMATIONS.walk1.pixels, colors, app, 2));
+  sprites.set('walk2', generateSprite(CHARACTER_ANIMATIONS.walk2.pixels, colors, app, 2));
+  sprites.set('walk3', generateSprite(CHARACTER_ANIMATIONS.walk3.pixels, colors, app, 2));
+
+  // Push frames
+  sprites.set('push1', generateSprite(CHARACTER_ANIMATIONS.push1.pixels, colors, app, 2));
+  sprites.set('push2', generateSprite(CHARACTER_ANIMATIONS.push2.pixels, colors, app, 2));
+  sprites.set('push3', generateSprite(CHARACTER_ANIMATIONS.push3.pixels, colors, app, 2));
+
+  // Jump
+  sprites.set('jump', generateSprite(CHARACTER_ANIMATIONS.jump.pixels, colors, app, 2));
+
+  return sprites;
+}
+
+/**
+ * Generate crate sprite for a given palette
+ */
+export function generateCrateSprite(colors: PaletteColors, app: Application): RenderTexture {
+  return generateSprite(CRATE_SPRITE.pixels, colors, app, 2);
+}
+
+/**
+ * Generate all crate sprites for different types and variants
+ */
+export function generateAllCrateSprites(
+  colors: PaletteColors,
+  app: Application
+): Map<string, RenderTexture> {
+  const sprites = new Map<string, RenderTexture>();
+
+  // Generate all visual variants for regular crates
+  for (let i = 0; i < CRATE_VARIANTS.length; i++) {
+    sprites.set(`crate_regular_${i}`, generateSprite(CRATE_VARIANTS[i].pixels, colors, app, 2));
+  }
+  // Default regular (variant 0)
+  sprites.set('crate_regular', generateSprite(CRATE_SPRITE.pixels, colors, app, 2));
+
+  // Special block sprites
+  sprites.set(
+    'crate_extraPoints',
+    generateSprite(CRATE_EXTRA_POINTS_SPRITE.pixels, colors, app, 2)
+  );
+  sprites.set('crate_superJump', generateSprite(CRATE_SUPER_JUMP_SPRITE.pixels, colors, app, 2));
+  sprites.set('crate_helmet', generateSprite(CRATE_HELMET_SPRITE.pixels, colors, app, 2));
+  sprites.set('crate_extraLife', generateSprite(CRATE_EXTRA_LIFE_SPRITE.pixels, colors, app, 2));
+
+  // Bomb sprite
+  sprites.set('crate_bomb', generateSprite(CRATE_BOMB_SPRITE.pixels, colors, app, 2));
+
+  // Colored crate sprites for match-3 mechanics
+  for (const [colorName, pattern] of Object.entries(COLORED_CRATE_PATTERNS)) {
+    sprites.set(`crate_${colorName}`, generateSprite(pattern.pixels, colors, app, 2));
+  }
+
+  return sprites;
+}
+
+/**
+ * Get the number of crate visual variants available
+ */
+export function getCrateVariantCount(): number {
+  return CRATE_VARIANTS.length;
+}
+
+/**
+ * Generate crane sprite for a given palette (closed hooks)
+ */
+export function generateCraneSprite(colors: PaletteColors, app: Application): RenderTexture {
+  return generateSprite(CRANE_SPRITE.pixels, colors, app, 2);
+}
+
+/**
+ * Generate crane sprite with open hooks for a given palette
+ */
+export function generateCraneOpenSprite(colors: PaletteColors, app: Application): RenderTexture {
+  return generateSprite(CRANE_SPRITE_OPEN.pixels, colors, app, 2);
+}
+
+/**
+ * Generate inverted crane sprite (light on dark background, closed hooks)
+ */
+export function generateInvertedCraneSprite(
+  colors: PaletteColors,
+  app: Application
+): RenderTexture {
+  return generateInvertedSprite(CRANE_SPRITE.pixels, colors, app, 2);
+}
+
+/**
+ * Generate inverted crane sprite with open hooks (light on dark background)
+ */
+export function generateInvertedCraneOpenSprite(
+  colors: PaletteColors,
+  app: Application
+): RenderTexture {
+  return generateInvertedSprite(CRANE_SPRITE_OPEN.pixels, colors, app, 2);
+}
+
+/**
+ * Generate UI element sprites for a given palette
+ */
+export function generateUISprites(
+  colors: PaletteColors,
+  app: Application
+): Map<string, RenderTexture> {
+  const sprites = new Map<string, RenderTexture>();
+
+  sprites.set('lock_icon', generateSprite(LOCK_ICON.pixels, colors, app, 2));
+  sprites.set('arrow_left', generateSprite(ARROW_LEFT.pixels, colors, app, 2));
+  sprites.set('arrow_right', generateSprite(ARROW_RIGHT.pixels, colors, app, 2));
+  sprites.set('arrow_up', generateSprite(ARROW_UP.pixels, colors, app, 2));
+  sprites.set('button_a', generateSprite(BUTTON_A.pixels, colors, app, 2));
+
+  return sprites;
+}
+
+/**
+ * Generate environment sprites (walls, floor, rail) for a given palette
+ */
+export function generateEnvironmentSprites(
+  colors: PaletteColors,
+  app: Application
+): Map<string, RenderTexture> {
+  const sprites = new Map<string, RenderTexture>();
+
+  sprites.set('brick_wall', generateSprite(BRICK_WALL_SPRITE.pixels, colors, app, 2));
+  sprites.set('floor_tile', generateSprite(FLOOR_TILE_SPRITE.pixels, colors, app, 2));
+  sprites.set('crane_rail', generateSprite(CRANE_RAIL_SPRITE.pixels, colors, app, 2));
+  // Inverted versions for dark header area
+  sprites.set(
+    'crane_rail_inverted',
+    generateInvertedSprite(CRANE_RAIL_SPRITE.pixels, colors, app, 2)
+  );
+
+  return sprites;
+}
+
+/**
+ * Get character sprite data by index
+ */
+export function getCharacterSpriteData(index: number): SpritePixelData | null {
+  if (index < 0 || index >= CHARACTER_SPRITES.length) {
+    return null;
+  }
+  return CHARACTER_SPRITES[index];
+}
+
+/**
+ * Get all sprite definitions for external use
+ */
+export const SPRITE_DEFINITIONS = {
+  characters: CHARACTER_SPRITES,
+  characterAnimations: CHARACTER_ANIMATIONS,
+  crate: CRATE_SPRITE,
+  crateVariants: CRATE_VARIANTS,
+  crateExtraPoints: CRATE_EXTRA_POINTS_SPRITE,
+  crateSuperJump: CRATE_SUPER_JUMP_SPRITE,
+  crateHelmet: CRATE_HELMET_SPRITE,
+  crateExtraLife: CRATE_EXTRA_LIFE_SPRITE,
+  crateBomb: CRATE_BOMB_SPRITE,
+  crateColored: COLORED_CRATE_PATTERNS,
+  crane: CRANE_SPRITE,
+  craneOpen: CRANE_SPRITE_OPEN,
+  brickWall: BRICK_WALL_SPRITE,
+  floorTile: FLOOR_TILE_SPRITE,
+  craneRail: CRANE_RAIL_SPRITE,
+  lock: LOCK_ICON,
+  arrowLeft: ARROW_LEFT,
+  arrowRight: ARROW_RIGHT,
+  arrowUp: ARROW_UP,
+  buttonA: BUTTON_A,
+};
