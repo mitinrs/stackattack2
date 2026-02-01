@@ -10,6 +10,7 @@ services:
     labels:
       # Traefik configuration
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik_public"
       - "traefik.http.routers.stackattack2.rule=Host(`stackattack2.pusk365.ru`)"
       - "traefik.http.routers.stackattack2.entrypoints=websecure"
       - "traefik.http.routers.stackattack2.tls=true"
