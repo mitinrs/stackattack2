@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        CACHEBUST: 2
+        CACHEBUST: 3
     container_name: stackattack2
     restart: unless-stopped
     networks:
@@ -13,10 +13,18 @@ services:
       # Traefik configuration
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_public"
+      # HTTPS router
       - "traefik.http.routers.stackattack2.rule=Host(`stackattack2.pusk365.ru`)"
       - "traefik.http.routers.stackattack2.entrypoints=websecure"
       - "traefik.http.routers.stackattack2.tls=true"
       - "traefik.http.routers.stackattack2.tls.certresolver=letsencrypt"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.stackattack2-http.rule=Host(`stackattack2.pusk365.ru`)"
+      - "traefik.http.routers.stackattack2-http.entrypoints=web"
+      - "traefik.http.routers.stackattack2-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      # Service
       - "traefik.http.services.stackattack2.loadbalancer.server.port=80"
 
 networks:
