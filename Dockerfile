@@ -1,6 +1,9 @@
 # Stage 1: Build the application
 FROM node:20-alpine AS builder
 
+# Cache buster - change to force rebuild
+ARG CACHEBUST=1
+
 WORKDIR /app
 
 # Copy package files
@@ -29,7 +32,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1/ || exit 1
 
 # Run nginx in foreground
 CMD ["nginx", "-g", "daemon off;"]
