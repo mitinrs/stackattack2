@@ -38,8 +38,8 @@ const DITHER_PIXEL_SIZE = 2; // Size of each dither pixel
 const MIN_TOUCH_TARGET_SIZE = 44;
 
 export interface GameSceneCallbacks {
-  onGameOver: (score: number, level: number) => void;
-  onLevelComplete: (level: number, score: number, unlocks: number[]) => void;
+  onGameOver: (score: number, level: number, linesCleared?: number) => void;
+  onLevelComplete: (level: number, score: number) => void;
   onQuitToMenu: () => void;
 }
 
@@ -716,7 +716,7 @@ export class GameScene extends Scene {
     });
 
     this.levelManager.addListener('levelComplete', (event) => {
-      this.handleLevelComplete(event.level, event.bonusPoints || 0, event.unlockRewards || []);
+      this.handleLevelComplete(event.level, event.bonusPoints || 0);
     });
 
     // State machine events
@@ -728,7 +728,7 @@ export class GameScene extends Scene {
   /**
    * Initialize game entities for a new game
    */
-  initializeGame(characterId: number): void {
+  initializeGame(characterId: number, startLevel: number = 1): void {
     // Set character config
     this.setSelectedCharacter(characterId);
 
@@ -746,8 +746,8 @@ export class GameScene extends Scene {
     // Create game managers
     this.createGameManagers();
 
-    // Start level 1
-    this.levelManager.startLevel(1);
+    // Start at selected level
+    this.levelManager.startLevel(startLevel);
     this.updateHUD();
 
     // Initialize cranes for level
@@ -964,25 +964,16 @@ export class GameScene extends Scene {
   /**
    * Handle level complete
    */
-  private handleLevelComplete(level: number, bonusPoints: number, unlocks: number[]): void {
+  private handleLevelComplete(level: number, bonusPoints: number): void {
     // Award bonus points
     this.scoreManager.addPoints(bonusPoints);
-
-    // Check for character unlocks
-    const newUnlocks = this.unlockManager.checkAndUnlock({
-      level: level,
-      score: this.scoreManager.getScore(),
-    });
-
-    // Combine level unlocks with any additional unlocks
-    const allUnlocks = [...unlocks, ...newUnlocks.map((c) => c.id)];
 
     // Update highest level reached
     this.scoreManager.setHighestLevelReached(level);
 
     // Notify callback
     if (this.callbacks?.onLevelComplete) {
-      this.callbacks.onLevelComplete(level, this.scoreManager.getScore(), allUnlocks);
+      this.callbacks.onLevelComplete(level, this.scoreManager.getScore());
     }
   }
 
@@ -993,7 +984,11 @@ export class GameScene extends Scene {
     this.isGameRunning = false;
 
     if (this.callbacks?.onGameOver) {
-      this.callbacks.onGameOver(this.scoreManager.getScore(), this.levelManager.getCurrentLevel());
+      this.callbacks.onGameOver(
+        this.scoreManager.getScore(),
+        this.levelManager.getCurrentLevel(),
+        this.scoreManager.getTotalLinesCleared()
+      );
     }
   }
 
@@ -1706,20 +1701,16 @@ export class GameScene extends Scene {
   /**
    * Handle character hit by bomb explosion
    * Returns true if survived, false if game over
+   * Note: Only extra lives protect from bomb explosions (helmet doesn't help)
    */
   private handleBombExplosionHit(): boolean {
-    // Check for helmet protection first
-    if (this.specialBlockManager?.consumeHelmet()) {
-      return true;
-    }
-
-    // Check for extra lives
+    // Only extra lives protect from bomb explosions
     if (this.specialBlockManager?.consumeLife()) {
       this.updateHUDLives();
       return true;
     }
 
-    // No protection - game over
+    // No extra lives - game over
     this.stateMachine.transition(GameState.GameOver);
     return false;
   }

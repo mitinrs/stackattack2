@@ -72,5 +72,4 @@ export interface Level {
   craneCount: number;
   crateSpeed: number;
   linesToClear: number;
-  unlockRewards?: number[];
 }

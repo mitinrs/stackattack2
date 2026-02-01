@@ -6,6 +6,7 @@ import { PixelGridGenerator } from './utils/PixelGridGenerator';
 import { AssetLoader } from './utils/AssetLoader';
 import { SceneManager } from './systems/SceneManager';
 import { InputManager } from './systems/InputManager';
+import { GameStorage } from './systems/GameStorage';
 import { LoadingScene } from './scenes/LoadingScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { SettingsScene } from './scenes/SettingsScene';
@@ -43,8 +44,13 @@ let sessionState = {
  * Initialize the game with loading screen
  */
 async function initializeGame() {
-  // Initialize LCD effect system
-  lcdEffect = new LCDEffect(ColorPalette.Blue);
+  // Load saved palette from cookies FIRST, before creating any scenes
+  const savedPalette = GameStorage.getPalette();
+  const initialPalette =
+    savedPalette && Object.values(ColorPalette).includes(savedPalette) ? savedPalette : ColorPalette.Blue;
+
+  // Initialize LCD effect system with saved or default palette
+  lcdEffect = new LCDEffect(initialPalette);
   displayScaler = new DisplayScaler(LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
   const app = new Application();
@@ -157,11 +163,6 @@ async function initializeGame() {
     await sceneManager.replace(SceneType.MainMenu);
   });
 
-  // Load palette preference from session
-  const savedPalette = sessionStorage.getItem('lcdPalette') as ColorPalette;
-  if (savedPalette && Object.values(ColorPalette).includes(savedPalette)) {
-    lcdEffect.setPalette(savedPalette);
-  }
 }
 
 /**
@@ -193,25 +194,23 @@ async function createAndRegisterScenes(
   gameScene.setAssetLoader(assetLoader);
   gameScene.setInputManager(inputManager);
   gameScene.setCallbacks({
-    onGameOver: async (score: number, level: number) => {
+    onGameOver: async (score: number, level: number, linesCleared?: number) => {
       sessionState.currentScore = score;
       sessionState.currentLevel = level;
+
+      // Save high score to cookies
+      const isNewHighScore = GameStorage.addHighScore(score, level, linesCleared);
       gameOverScene.setFinalScore(score);
       gameOverScene.setHighestLevel(level);
+      gameOverScene.setIsNewHighScore(isNewHighScore);
+
       await sceneManager.replace(SceneType.GameOver);
     },
-    onLevelComplete: async (level: number, score: number, unlocks: number[]) => {
+    onLevelComplete: async (level: number, score: number) => {
       sessionState.currentScore = score;
       sessionState.currentLevel = level + 1;
 
-      // Add any new unlocks to session state
-      for (const unlockId of unlocks) {
-        if (!sessionState.unlockedCharacterIds.includes(unlockId)) {
-          sessionState.unlockedCharacterIds.push(unlockId);
-        }
-      }
-
-      levelTransitionScene.setLevelInfo(level, score, unlocks);
+      levelTransitionScene.setLevelInfo(level, score);
       await sceneManager.push(SceneType.LevelTransition);
     },
     onQuitToMenu: async () => {
@@ -259,16 +258,18 @@ async function createAndRegisterScenes(
   // Set up scene callbacks
   mainMenuScene.setOnAction(async (action) => {
     switch (action) {
-      case 'playGame':
-        // Update game scene with current session state
-        gameScene.setUnlockedCharacterIds(sessionState.unlockedCharacterIds);
-        await sceneManager.push(SceneType.Game);
-        gameScene.initializeGame(sessionState.selectedCharacterId);
-        break;
       case 'settings':
         await sceneManager.push(SceneType.Settings);
         break;
     }
+  });
+
+  // Handle starting game with selected level
+  mainMenuScene.setOnStartGame(async (startLevel: number) => {
+    sessionState.currentLevel = startLevel;
+    gameScene.setUnlockedCharacterIds(sessionState.unlockedCharacterIds);
+    await sceneManager.push(SceneType.Game);
+    gameScene.initializeGame(sessionState.selectedCharacterId, startLevel);
   });
 
   settingsScene.setOnBack(() => {
@@ -292,8 +293,8 @@ async function createAndRegisterScenes(
     // Update HTML mobile controls palette
     updateMobileControlsPalette(_palette);
 
-    // Store palette preference in session
-    sessionStorage.setItem('lcdPalette', _palette);
+    // Store palette preference in cookies
+    GameStorage.savePalette(_palette);
   });
 }
 

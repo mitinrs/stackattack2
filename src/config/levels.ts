@@ -18,7 +18,6 @@ export const BASE_FALL_SPEED = 60;
  * - craneCount: Number of cranes dropping crates (1-8)
  * - crateSpeed: Multiplier for fall speed (1.0-4.0)
  * - linesToClear: Number of lines needed to complete the level
- * - unlockRewards: Character IDs unlocked upon completing this level
  */
 export const LEVELS: LevelConfig[] = [
   {
@@ -40,7 +39,6 @@ export const LEVELS: LevelConfig[] = [
     craneCount: 2,
     crateSpeed: 1.5,
     linesToClear: 7,
-    unlockRewards: [3], // Unlocks Character 3 (Jumper)
     description: 'Crates are falling faster!',
   },
   {
@@ -55,7 +53,6 @@ export const LEVELS: LevelConfig[] = [
     craneCount: 4,
     crateSpeed: 2.0,
     linesToClear: 10,
-    unlockRewards: [4], // Unlocks Character 4 (Brute)
     description: 'Four cranes dropping crates!',
   },
   {
@@ -77,7 +74,6 @@ export const LEVELS: LevelConfig[] = [
     craneCount: 7,
     crateSpeed: 3.0,
     linesToClear: 18,
-    unlockRewards: [6], // Unlocks Character 6 (Tank)
     description: 'Seven cranes now!',
   },
   {
@@ -136,10 +132,3 @@ export function hasNextLevel(currentLevel: number): boolean {
   return currentLevel < getMaxLevel();
 }
 
-/**
- * Get character unlock rewards for completing a level
- */
-export function getLevelUnlockRewards(levelNumber: number): number[] {
-  const level = getLevelConfig(levelNumber);
-  return level?.unlockRewards ?? [];
-}

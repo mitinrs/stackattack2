@@ -21,10 +21,12 @@ export type GameOverAction = 'playAgain' | 'mainMenu';
 export class GameOverScene extends Scene {
   private lcdEffect: LCDEffect;
   private gameOverData: GameOverData | null = null;
+  private isNewHighScore: boolean = false;
 
   // UI elements
   private background: Graphics | null = null;
   private titleText: Text | null = null;
+  private newHighScoreText: Text | null = null;
   private scoreText: Text | null = null;
   private levelText: Text | null = null;
   private statsText: Text | null = null;
@@ -107,6 +109,14 @@ export class GameOverScene extends Scene {
   }
 
   /**
+   * Set whether this is a new high score
+   */
+  setIsNewHighScore(isNew: boolean): void {
+    this.isNewHighScore = isNew;
+    this.updateNewHighScoreDisplay();
+  }
+
+  /**
    * Create the scene content
    */
   protected async onCreate(): Promise<void> {
@@ -156,6 +166,22 @@ export class GameOverScene extends Scene {
     this.titleText.anchor.set(0.5);
     this.titleText.position.set(120, 50);
     this.container.addChild(this.titleText);
+
+    // New High Score indicator (hidden by default)
+    this.newHighScoreText = new Text({
+      text: 'NEW HIGH SCORE!',
+      style: new TextStyle({
+        fontFamily: 'monospace',
+        fontSize: 12,
+        fill: colors.accent,
+        align: 'center',
+        fontWeight: 'bold',
+      }),
+    });
+    this.newHighScoreText.anchor.set(0.5);
+    this.newHighScoreText.position.set(120, 75);
+    this.newHighScoreText.visible = false;
+    this.container.addChild(this.newHighScoreText);
 
     // Final score
     this.scoreText = new Text({
@@ -316,6 +342,15 @@ export class GameOverScene extends Scene {
   }
 
   /**
+   * Update the new high score indicator visibility
+   */
+  private updateNewHighScoreDisplay(): void {
+    if (this.newHighScoreText) {
+      this.newHighScoreText.visible = this.isNewHighScore;
+    }
+  }
+
+  /**
    * Handle keyboard navigation
    */
   private handleKeyPress = (event: KeyboardEvent): void => {
@@ -350,6 +385,7 @@ export class GameOverScene extends Scene {
     this.selectedIndex = 0;
     this.updateButtonHighlight();
     this.updateDisplay();
+    this.updateNewHighScoreDisplay();
 
     // Add keyboard listener
     window.addEventListener('keydown', this.handleKeyPress);
@@ -379,6 +415,10 @@ export class GameOverScene extends Scene {
       this.titleText.style.fill = colors.accent;
     }
 
+    if (this.newHighScoreText) {
+      this.newHighScoreText.style.fill = colors.accent;
+    }
+
     if (this.scoreText) {
       this.scoreText.style.fill = colors.foreground;
     }
@@ -399,8 +439,10 @@ export class GameOverScene extends Scene {
    */
   reset(): void {
     this.gameOverData = null;
+    this.isNewHighScore = false;
     this.selectedIndex = 0;
     this.updateButtonHighlight();
+    this.updateNewHighScoreDisplay();
   }
 
   /**
@@ -417,6 +459,11 @@ export class GameOverScene extends Scene {
     if (this.titleText) {
       this.titleText.destroy();
       this.titleText = null;
+    }
+
+    if (this.newHighScoreText) {
+      this.newHighScoreText.destroy();
+      this.newHighScoreText = null;
     }
 
     if (this.scoreText) {

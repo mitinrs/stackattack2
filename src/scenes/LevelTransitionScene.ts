@@ -1,7 +1,6 @@
 /**
  * Level Transition Scene
- * Displays level completion message, score, and next level preview
- * Auto-advances after 3 seconds or on button press
+ * Displays level completion congratulations and continue button
  */
 
 import { Graphics, Text, TextStyle } from 'pixi.js';
@@ -9,36 +8,28 @@ import { Scene } from './Scene';
 import { SceneType } from '../types/game';
 import type { LCDEffect } from '../systems/LCDEffect';
 import type { LevelConfig } from '../types/config';
-import { getLevelConfig } from '../config/levels';
-
-/**
- * Auto-advance delay in milliseconds
- */
-const AUTO_ADVANCE_DELAY = 3000;
+import { getLevelConfig, hasNextLevel } from '../config/levels';
 
 export interface LevelTransitionData {
   completedLevel: number;
   currentScore: number;
   bonusPoints: number;
   nextLevelConfig?: LevelConfig;
-  unlockedCharacters?: number[];
 }
 
 export class LevelTransitionScene extends Scene {
   private lcdEffect: LCDEffect;
   private transitionData: LevelTransitionData | null = null;
-  private autoAdvanceTimer: number = 0;
-  private isAutoAdvanceEnabled: boolean = true;
 
   // UI elements
   private background: Graphics | null = null;
-  private levelCompleteText: Text | null = null;
+  private congratsText: Text | null = null;
+  private levelText: Text | null = null;
   private scoreText: Text | null = null;
   private bonusText: Text | null = null;
   private nextLevelText: Text | null = null;
-  private unlockText: Text | null = null;
-  private continueText: Text | null = null;
-  private progressBar: Graphics | null = null;
+  private continueButton: Graphics | null = null;
+  private continueButtonText: Text | null = null;
 
   // Callbacks
   private onContinue: (() => void) | null = null;
@@ -58,21 +49,17 @@ export class LevelTransitionScene extends Scene {
 
   /**
    * Set level info (convenience method)
-   * @param level - The level that was completed
-   * @param score - Current score
-   * @param unlocks - Array of unlocked character IDs
    */
-  setLevelInfo(level: number, score: number, unlocks: number[] = []): void {
+  setLevelInfo(level: number, score: number): void {
     const nextLevel = level + 1;
     const nextLevelConfig = getLevelConfig(nextLevel);
-    const bonusPoints = level * 500; // Level completion bonus
+    const bonusPoints = level * 500;
 
     this.transitionData = {
       completedLevel: level,
       currentScore: score,
       bonusPoints: bonusPoints,
       nextLevelConfig: nextLevelConfig,
-      unlockedCharacters: unlocks,
     };
     this.updateDisplay();
   }
@@ -82,13 +69,6 @@ export class LevelTransitionScene extends Scene {
    */
   setOnContinue(callback: () => void): void {
     this.onContinue = callback;
-  }
-
-  /**
-   * Enable or disable auto-advance
-   */
-  setAutoAdvanceEnabled(enabled: boolean): void {
-    this.isAutoAdvanceEnabled = enabled;
   }
 
   /**
@@ -103,14 +83,40 @@ export class LevelTransitionScene extends Scene {
     this.background.fill({ color: colors.background });
     this.container.addChild(this.background);
 
-    // Create pixel-art style text
-    const titleStyle = new TextStyle({
+    // Congratulations text
+    const congratsStyle = new TextStyle({
       fontFamily: 'monospace',
-      fontSize: 16,
+      fontSize: 18,
       fill: colors.accent,
+      align: 'center',
+      fontWeight: 'bold',
+    });
+
+    this.congratsText = new Text({
+      text: 'GREAT JOB!',
+      style: congratsStyle,
+    });
+    this.congratsText.anchor.set(0.5);
+    this.congratsText.position.set(120, 50);
+    this.container.addChild(this.congratsText);
+
+    // Level completed text
+    const levelStyle = new TextStyle({
+      fontFamily: 'monospace',
+      fontSize: 14,
+      fill: colors.foreground,
       align: 'center',
     });
 
+    this.levelText = new Text({
+      text: 'Level 1 Complete',
+      style: levelStyle,
+    });
+    this.levelText.anchor.set(0.5);
+    this.levelText.position.set(120, 90);
+    this.container.addChild(this.levelText);
+
+    // Score display
     const textStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 12,
@@ -118,83 +124,65 @@ export class LevelTransitionScene extends Scene {
       align: 'center',
     });
 
-    const smallStyle = new TextStyle({
-      fontFamily: 'monospace',
-      fontSize: 10,
-      fill: colors.foreground,
-      align: 'center',
-    });
-
-    // Level complete title
-    this.levelCompleteText = new Text({
-      text: 'LEVEL COMPLETE!',
-      style: titleStyle,
-    });
-    this.levelCompleteText.anchor.set(0.5);
-    this.levelCompleteText.position.set(120, 60);
-    this.container.addChild(this.levelCompleteText);
-
-    // Score display
     this.scoreText = new Text({
       text: 'Score: 0',
       style: textStyle,
     });
     this.scoreText.anchor.set(0.5);
-    this.scoreText.position.set(120, 100);
+    this.scoreText.position.set(120, 130);
     this.container.addChild(this.scoreText);
 
-    // Bonus points display
+    // Bonus points
     this.bonusText = new Text({
       text: 'Bonus: +0',
-      style: textStyle,
+      style: new TextStyle({
+        fontFamily: 'monospace',
+        fontSize: 12,
+        fill: colors.accent,
+        align: 'center',
+      }),
     });
     this.bonusText.anchor.set(0.5);
-    this.bonusText.position.set(120, 120);
+    this.bonusText.position.set(120, 150);
     this.container.addChild(this.bonusText);
 
     // Next level preview
     this.nextLevelText = new Text({
       text: '',
-      style: textStyle,
-    });
-    this.nextLevelText.anchor.set(0.5);
-    this.nextLevelText.position.set(120, 160);
-    this.container.addChild(this.nextLevelText);
-
-    // Character unlock notification
-    this.unlockText = new Text({
-      text: '',
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 11,
-        fill: colors.accent,
+        fill: colors.foreground,
         align: 'center',
       }),
     });
-    this.unlockText.anchor.set(0.5);
-    this.unlockText.position.set(120, 200);
-    this.container.addChild(this.unlockText);
+    this.nextLevelText.anchor.set(0.5);
+    this.nextLevelText.position.set(120, 195);
+    this.container.addChild(this.nextLevelText);
 
-    // Continue text
-    this.continueText = new Text({
-      text: 'Press any key to continue...',
-      style: smallStyle,
+    // Continue button
+    this.continueButton = new Graphics();
+    this.continueButton.roundRect(60, 240, 120, 40, 4);
+    this.continueButton.fill({ color: colors.accent });
+    this.continueButton.eventMode = 'static';
+    this.continueButton.cursor = 'pointer';
+    this.continueButton.on('pointerdown', this.handleContinue.bind(this));
+    this.container.addChild(this.continueButton);
+
+    // Continue button text
+    this.continueButtonText = new Text({
+      text: 'CONTINUE',
+      style: new TextStyle({
+        fontFamily: 'monospace',
+        fontSize: 14,
+        fill: colors.background,
+        align: 'center',
+        fontWeight: 'bold',
+      }),
     });
-    this.continueText.anchor.set(0.5);
-    this.continueText.position.set(120, 260);
-    this.container.addChild(this.continueText);
-
-    // Progress bar background
-    this.progressBar = new Graphics();
-    this.progressBar.position.set(40, 280);
-    this.container.addChild(this.progressBar);
-
-    this.drawProgressBar(0);
-
-    // Add click/touch listener for manual advance
-    this.container.eventMode = 'static';
-    this.container.cursor = 'pointer';
-    this.container.on('pointerdown', this.handleContinue.bind(this));
+    this.continueButtonText.anchor.set(0.5);
+    this.continueButtonText.position.set(120, 260);
+    this.container.addChild(this.continueButtonText);
   }
 
   /**
@@ -203,11 +191,9 @@ export class LevelTransitionScene extends Scene {
   private updateDisplay(): void {
     if (!this.transitionData) return;
 
-    const colors = this.lcdEffect.getPaletteColors();
-
-    // Update level complete text
-    if (this.levelCompleteText) {
-      this.levelCompleteText.text = `LEVEL ${this.transitionData.completedLevel}\nCOMPLETE!`;
+    // Update level text
+    if (this.levelText) {
+      this.levelText.text = `Level ${this.transitionData.completedLevel} Complete`;
     }
 
     // Update score
@@ -229,49 +215,17 @@ export class LevelTransitionScene extends Scene {
           `${next.craneCount} crane${next.craneCount > 1 ? 's' : ''}, ` +
           `${next.linesToClear} lines`;
       } else {
-        this.nextLevelText.text = 'You have conquered\nall levels!';
+        this.nextLevelText.text = 'You beat all levels!';
       }
     }
 
-    // Update unlock notification
-    if (this.unlockText) {
-      if (
-        this.transitionData.unlockedCharacters &&
-        this.transitionData.unlockedCharacters.length > 0
-      ) {
-        const charIds = this.transitionData.unlockedCharacters;
-        this.unlockText.text =
-          `NEW CHARACTER${charIds.length > 1 ? 'S' : ''} UNLOCKED!\n` +
-          `Character ${charIds.join(', ')}`;
-        this.unlockText.style.fill = colors.accent;
+    // Update button text based on whether there's a next level
+    if (this.continueButtonText) {
+      if (hasNextLevel(this.transitionData.completedLevel)) {
+        this.continueButtonText.text = 'CONTINUE';
       } else {
-        this.unlockText.text = '';
+        this.continueButtonText.text = 'FINISH';
       }
-    }
-  }
-
-  /**
-   * Draw the progress bar
-   */
-  private drawProgressBar(progress: number): void {
-    if (!this.progressBar) return;
-
-    const colors = this.lcdEffect.getPaletteColors();
-    const barWidth = 160;
-    const barHeight = 8;
-
-    this.progressBar.clear();
-
-    // Background
-    this.progressBar.rect(0, 0, barWidth, barHeight);
-    this.progressBar.fill({ color: colors.background });
-    this.progressBar.stroke({ color: colors.foreground, width: 1 });
-
-    // Progress fill
-    const fillWidth = Math.min(barWidth - 2, (barWidth - 2) * progress);
-    if (fillWidth > 0) {
-      this.progressBar.rect(1, 1, fillWidth, barHeight - 2);
-      this.progressBar.fill({ color: colors.accent });
     }
   }
 
@@ -289,7 +243,6 @@ export class LevelTransitionScene extends Scene {
    */
   override onEnter(): void {
     super.onEnter();
-    this.autoAdvanceTimer = 0;
     this.updateDisplay();
 
     // Add keyboard listener
@@ -309,29 +262,8 @@ export class LevelTransitionScene extends Scene {
    * Handle keyboard input
    */
   private handleKeyPress(event: KeyboardEvent): void {
-    // Any key continues to next level
-    if (event.key === ' ' || event.key === 'Enter' || event.key === 'Escape') {
+    if (event.key === ' ' || event.key === 'Enter') {
       event.preventDefault();
-      this.handleContinue();
-    }
-  }
-
-  /**
-   * Update the scene
-   */
-  override update(deltaTime: number): void {
-    if (!this.isAutoAdvanceEnabled) return;
-
-    // Update auto-advance timer
-    this.autoAdvanceTimer += deltaTime * 1000; // Convert to milliseconds
-
-    // Update progress bar
-    const progress = Math.min(1, this.autoAdvanceTimer / AUTO_ADVANCE_DELAY);
-    this.drawProgressBar(progress);
-
-    // Auto-advance when timer completes
-    if (this.autoAdvanceTimer >= AUTO_ADVANCE_DELAY) {
-      this.autoAdvanceTimer = 0;
       this.handleContinue();
     }
   }
@@ -348,8 +280,12 @@ export class LevelTransitionScene extends Scene {
       this.background.fill({ color: colors.background });
     }
 
-    if (this.levelCompleteText) {
-      this.levelCompleteText.style.fill = colors.accent;
+    if (this.congratsText) {
+      this.congratsText.style.fill = colors.accent;
+    }
+
+    if (this.levelText) {
+      this.levelText.style.fill = colors.foreground;
     }
 
     if (this.scoreText) {
@@ -357,18 +293,22 @@ export class LevelTransitionScene extends Scene {
     }
 
     if (this.bonusText) {
-      this.bonusText.style.fill = colors.foreground;
+      this.bonusText.style.fill = colors.accent;
     }
 
     if (this.nextLevelText) {
       this.nextLevelText.style.fill = colors.foreground;
     }
 
-    if (this.continueText) {
-      this.continueText.style.fill = colors.foreground;
+    if (this.continueButton) {
+      this.continueButton.clear();
+      this.continueButton.roundRect(60, 240, 120, 40, 4);
+      this.continueButton.fill({ color: colors.accent });
     }
 
-    this.drawProgressBar(this.autoAdvanceTimer / AUTO_ADVANCE_DELAY);
+    if (this.continueButtonText) {
+      this.continueButtonText.style.fill = colors.background;
+    }
   }
 
   /**
@@ -376,8 +316,6 @@ export class LevelTransitionScene extends Scene {
    */
   reset(): void {
     this.transitionData = null;
-    this.autoAdvanceTimer = 0;
-    this.drawProgressBar(0);
   }
 
   /**
@@ -391,9 +329,14 @@ export class LevelTransitionScene extends Scene {
       this.background = null;
     }
 
-    if (this.levelCompleteText) {
-      this.levelCompleteText.destroy();
-      this.levelCompleteText = null;
+    if (this.congratsText) {
+      this.congratsText.destroy();
+      this.congratsText = null;
+    }
+
+    if (this.levelText) {
+      this.levelText.destroy();
+      this.levelText = null;
     }
 
     if (this.scoreText) {
@@ -411,19 +354,14 @@ export class LevelTransitionScene extends Scene {
       this.nextLevelText = null;
     }
 
-    if (this.unlockText) {
-      this.unlockText.destroy();
-      this.unlockText = null;
+    if (this.continueButton) {
+      this.continueButton.destroy();
+      this.continueButton = null;
     }
 
-    if (this.continueText) {
-      this.continueText.destroy();
-      this.continueText = null;
-    }
-
-    if (this.progressBar) {
-      this.progressBar.destroy();
-      this.progressBar = null;
+    if (this.continueButtonText) {
+      this.continueButtonText.destroy();
+      this.continueButtonText = null;
     }
 
     super.destroy();

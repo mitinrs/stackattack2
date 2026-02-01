@@ -8,7 +8,6 @@ import {
   getLevelConfig,
   getLevelFallSpeed,
   hasNextLevel,
-  getLevelUnlockRewards,
   getMaxLevel,
 } from '../config/levels';
 
@@ -31,7 +30,6 @@ export interface LevelEvent {
   level: number;
   linesCleared: number;
   linesToClear: number;
-  unlockRewards?: number[];
   bonusPoints?: number;
 }
 
@@ -133,7 +131,6 @@ export class LevelManager {
         level: this.currentLevel,
         linesCleared: this.linesCleared,
         linesToClear: this.getLinesToClear(),
-        unlockRewards: this.getCurrentLevelUnlockRewards(),
         bonusPoints: this.getCompletionBonus(),
       });
     }
@@ -160,13 +157,6 @@ export class LevelManager {
    */
   getCompletionBonus(): number {
     return this.currentLevel * LEVEL_COMPLETION_BONUS_MULTIPLIER;
-  }
-
-  /**
-   * Get character unlock rewards for the current level
-   */
-  getCurrentLevelUnlockRewards(): number[] {
-    return getLevelUnlockRewards(this.currentLevel);
   }
 
   /**
