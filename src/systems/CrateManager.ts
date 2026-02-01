@@ -184,6 +184,13 @@ export class CrateManager extends Container {
   }
 
   /**
+   * Get the height of crates stacked in a column (number of occupied rows from bottom)
+   */
+  getColumnHeight(column: number): number {
+    return this.getNextLandingRow(column);
+  }
+
+  /**
    * Land a crate at a specific row
    */
   landCrate(crate: Crate, row: number): void {
@@ -240,6 +247,7 @@ export class CrateManager extends Container {
     const column = crate.getGridColumn();
     const crateY = crate.y;
     const crateBottomY = crateY; // Anchor is at bottom
+    const crateHeight = this.config.crateSize;
 
     // Check ground collision first (most common)
     if (crateBottomY >= this.config.groundY) {
@@ -251,7 +259,7 @@ export class CrateManager extends Container {
       };
     }
 
-    // Check collision with stacked crates in the same column
+    // Check collision with stacked crates in the same column (from grid)
     const nextLandingRow = this.getNextLandingRow(column);
     if (nextLandingRow > 0) {
       // There's a crate below
@@ -263,6 +271,51 @@ export class CrateManager extends Container {
           landingRow: nextLandingRow,
           landingY: this.getRowBottomY(nextLandingRow),
         };
+      }
+    }
+
+    // Check collision with other falling crates in the same column
+    for (const other of this.crates) {
+      if (other === crate) continue;
+      if (other.getGridColumn() !== column) continue;
+      if (!other.isFalling()) continue;
+
+      // Check if this crate is above the other and they overlap
+      const otherTopY = other.y - crateHeight;
+      if (crateBottomY >= otherTopY && crate.y < other.y) {
+        // This crate landed on top of the other falling crate
+        // The lower crate will handle its own landing, so we stop this one just above
+        const landingY = otherTopY;
+        const landingRow = Math.max(0, Math.floor((this.config.groundY - landingY) / crateHeight));
+        return {
+          collidedWithGround: false,
+          collidedWithCrate: true,
+          landingRow: Math.min(landingRow, this.config.gridRows - 1),
+          landingY: landingY,
+        };
+      }
+    }
+
+    // Check collision with sliding crates in the same column
+    for (const other of this.crates) {
+      if (other === crate) continue;
+      if (!other.isSliding()) continue;
+
+      // Check if sliding crate is in or moving through this column
+      const otherColumn = Math.round((other.x - this.config.leftMargin) / this.config.crateSize);
+      if (otherColumn !== column) continue;
+
+      const otherTopY = other.y - crateHeight;
+      if (crateBottomY >= otherTopY) {
+        const landingRow = other.getGridRow() + 1;
+        if (landingRow < this.config.gridRows) {
+          return {
+            collidedWithGround: false,
+            collidedWithCrate: true,
+            landingRow: landingRow,
+            landingY: this.getRowBottomY(landingRow),
+          };
+        }
       }
     }
 
@@ -619,8 +672,15 @@ export class CrateManager extends Container {
       if (!crate.isSliding()) {
         // Calculate target X (next cell center)
         const currentColumn = crate.getGridColumn();
+        const currentRow = crate.getGridRow();
         const targetColumn = currentColumn + direction;
         const targetX = this.getColumnCenterX(targetColumn);
+
+        // Remove from grid immediately to prevent phantom collisions
+        if (this.grid[currentRow][currentColumn] === crate) {
+          this.grid[currentRow][currentColumn] = null;
+        }
+
         crate.startBeingPushed(direction, targetX);
       }
     }
@@ -649,16 +709,12 @@ export class CrateManager extends Container {
 
     // Check if target column is valid
     if (targetColumn < 0 || targetColumn >= this.config.gridColumns) {
-      // Stay in current column
+      // Stay in current column - add back to grid
       const newX = this.getColumnCenterX(currentColumn);
       const newY = this.getRowBottomY(currentRow);
       crate.stopBeingPushed(newX, newY);
+      this.grid[currentRow][currentColumn] = crate;
       return { newColumn: currentColumn, newX, newY };
-    }
-
-    // Remove from old position in grid
-    if (this.grid[currentRow][currentColumn] === crate) {
-      this.grid[currentRow][currentColumn] = null;
     }
 
     // Check landing row in new column
@@ -695,8 +751,10 @@ export class CrateManager extends Container {
 
     // Only update grid if we have a valid target column
     if (newColumn < 0 || newColumn >= this.config.gridColumns) {
-      // Hit boundary - stop and snap back
+      // Hit boundary - stop, snap back, and add back to grid
       crate.stopBeingPushed(oldCellCenter, this.getRowBottomY(oldRow));
+      // Add back to grid at original position
+      this.grid[oldRow][oldColumn] = crate;
       return;
     }
 
@@ -706,14 +764,10 @@ export class CrateManager extends Container {
       (direction < 0 && oldX > newCellCenter && newX <= newCellCenter);
 
     if (crossedBoundary) {
-      // Update grid - remove from old, add to new
-      if (this.grid[oldRow][oldColumn] === crate) {
-        this.grid[oldRow][oldColumn] = null;
-      }
-
       // Check landing row in new column
       const newLandingRow = this.getNextLandingRowForColumn(newColumn, oldRow);
       crate.setGridPosition(newColumn, newLandingRow);
+      // Add to new position in grid
       this.grid[newLandingRow][newColumn] = crate;
 
       // Snap to new cell center
@@ -730,6 +784,8 @@ export class CrateManager extends Container {
         const column = crate.getGridColumn();
         const row = crate.getGridRow();
         crate.stopBeingPushed(this.getColumnCenterX(column), this.getRowBottomY(row));
+        // Add back to grid at current position
+        this.grid[row][column] = crate;
       }
     }
   }
@@ -770,12 +826,7 @@ export class CrateManager extends Container {
         // Check if next column has space
         const nextLandingRow = this.getNextLandingRowForColumn(nextColumn, currentRow);
 
-        // Remove from old position in grid
-        if (this.grid[currentRow][currentColumn] === crate) {
-          this.grid[currentRow][currentColumn] = null;
-        }
-
-        // Update to new position
+        // Update to new position (crate was already removed from grid when sliding started)
         crate.setGridPosition(nextColumn, nextLandingRow);
         this.grid[nextLandingRow][nextColumn] = crate;
 
@@ -787,10 +838,11 @@ export class CrateManager extends Container {
       }
     }
 
-    // Stay in current column
+    // Stay in current column - add back to grid
     const newX = currentCenterX;
     const newY = this.getRowBottomY(currentRow);
     crate.stopBeingPushed(newX, newY);
+    this.grid[currentRow][currentColumn] = crate;
 
     return { newColumn: currentColumn, newX, newY };
   }

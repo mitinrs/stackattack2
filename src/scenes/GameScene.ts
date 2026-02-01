@@ -1518,6 +1518,33 @@ export class GameScene extends Scene {
       return false;
     }
 
+    // Check if there's a blocking crate in the target column at the same height or lower
+    const crateY = crate.y;
+    const crateSize = DEFAULT_GRID_CONFIG.crateSize;
+
+    // Get the height of the stack in target column
+    const stackHeight = this.crateManager.getColumnHeight(targetColumn);
+    if (stackHeight > 0) {
+      const topOfStackY = this.crateManager.getRowTopY(stackHeight - 1);
+      // If the falling crate would collide with the stack, don't allow push
+      if (crateY >= topOfStackY - crateSize) {
+        return false;
+      }
+    }
+
+    // Check for other falling crates in the target column that would block
+    const fallingCrates = this.crateManager.getFallingCrates();
+    for (const other of fallingCrates) {
+      if (other === crate) continue;
+      if (other.getGridColumn() !== targetColumn) continue;
+
+      // Check if they would overlap horizontally after the push
+      const otherY = other.y;
+      if (Math.abs(crateY - otherY) < crateSize) {
+        return false;
+      }
+    }
+
     // Move the falling crate to the new column
     crate.setGridColumn(targetColumn);
     const newX = this.crateManager.getColumnCenterX(targetColumn);

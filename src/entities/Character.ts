@@ -7,6 +7,7 @@ import { Sprite, Texture } from 'pixi.js';
 import type { CharacterConfig } from '../types/config';
 import type { Position, Velocity } from '../types/entities';
 import type { CharacterAnimationFrame } from '../utils/SpriteGenerator';
+import { DEFAULT_GRID_CONFIG, getGridLeftX } from '../config/grid';
 
 export const CharacterState = {
   Idle: 'idle',
@@ -29,6 +30,10 @@ const FAST_HORIZONTAL_SPEED = 180; // max speed for speed=2
 // Crate height for jump calculation
 const CRATE_HEIGHT = 16; // pixels
 const JUMP_BUFFER = 6; // extra height buffer to clear crate
+
+// Grid snap constants
+const GRID_SNAP_SPEED = 150; // pixels per second when snapping to grid
+const GRID_SNAP_THRESHOLD = 1; // snap immediately if within this distance
 
 // Collision width ratio - character collision is narrower than sprite
 // This allows fitting into 1-crate wide niches
@@ -79,6 +84,11 @@ export class Character extends Sprite {
   private idleSequenceIndex: number = 0;
   private idleLookingLeft: boolean = false; // For idle left/right mirroring
   private lastAnimationFrame: CharacterAnimationFrame = 'idle_front';
+
+  // Grid snap state
+  private gridSnapTargetX: number | null = null;
+  private lastMoveDirection: number = 0; // -1 = left, 1 = right, 0 = none
+  private lastSnapX: number = 0; // To detect if we're stuck
 
   constructor(config: CharacterConfig) {
     super();
@@ -191,6 +201,10 @@ export class Character extends Sprite {
     this.facingRight = false;
     this.scale.x = -Math.abs(this.scale.x); // Flip sprite
 
+    // Cancel any grid snap in progress and remember direction
+    this.gridSnapTargetX = null;
+    this.lastMoveDirection = -1;
+
     // Apply acceleration
     this.velocity.x -= ACCELERATION * deltaTime;
 
@@ -211,6 +225,10 @@ export class Character extends Sprite {
   moveRight(deltaTime: number): void {
     this.facingRight = true;
     this.scale.x = Math.abs(this.scale.x); // Normal sprite direction
+
+    // Cancel any grid snap in progress and remember direction
+    this.gridSnapTargetX = null;
+    this.lastMoveDirection = 1;
 
     // Apply acceleration
     this.velocity.x += ACCELERATION * deltaTime;
@@ -309,6 +327,79 @@ export class Character extends Sprite {
         this.velocity.x += DECELERATION * deltaTime;
         if (this.velocity.x > 0) this.velocity.x = 0;
       }
+
+      // Grid snap: when velocity reaches 0, snap to next grid cell in move direction
+      if (this.velocity.x === 0 && this.lastMoveDirection !== 0) {
+        if (this.gridSnapTargetX === null) {
+          // Calculate target cell center based on last move direction
+          const gridLeft = getGridLeftX();
+          const cellWidth = DEFAULT_GRID_CONFIG.cellWidth;
+          const cellCenter0 = gridLeft + cellWidth / 2;
+
+          // Find current column
+          const relativeX = this.x - cellCenter0;
+          const currentColumn = Math.round(relativeX / cellWidth);
+
+          // Target is next cell in the direction we were moving
+          const targetColumn = currentColumn + this.lastMoveDirection;
+          // Clamp to valid column range
+          const clampedColumn = Math.max(0, Math.min(DEFAULT_GRID_CONFIG.columns - 1, targetColumn));
+          this.gridSnapTargetX = cellCenter0 + clampedColumn * cellWidth;
+          this.lastSnapX = -9999; // Initialize to impossible value
+
+          // Set sprite direction based on snap direction
+          if (this.lastMoveDirection > 0) {
+            this.facingRight = true;
+            this.scale.x = Math.abs(this.scale.x);
+          } else {
+            this.facingRight = false;
+            this.scale.x = -Math.abs(this.scale.x);
+          }
+        }
+
+        // Move towards snap target
+        const distanceToTarget = this.gridSnapTargetX - this.x;
+        if (Math.abs(distanceToTarget) <= GRID_SNAP_THRESHOLD) {
+          // Close enough - snap immediately
+          this.x = this.gridSnapTargetX;
+          this.gridSnapTargetX = null;
+          this.lastMoveDirection = 0;
+          this.state = CharacterState.Idle;
+        } else {
+          // Check if we're stuck (position same as last frame after collision resolution)
+          if (Math.abs(this.x - this.lastSnapX) < 0.5 && this.lastSnapX !== -9999) {
+            // We're stuck - cancel snap
+            this.gridSnapTargetX = null;
+            this.lastMoveDirection = 0;
+            this.state = CharacterState.Idle;
+          } else {
+            // Remember position before moving
+            const posBeforeMove = this.x;
+
+            // Keep walking animation during snap
+            this.state = CharacterState.Walking;
+
+            // Move towards target
+            const snapDirection = distanceToTarget > 0 ? 1 : -1;
+            const snapDelta = GRID_SNAP_SPEED * deltaTime * snapDirection;
+            // Don't overshoot
+            if (Math.abs(snapDelta) > Math.abs(distanceToTarget)) {
+              this.x = this.gridSnapTargetX;
+              this.gridSnapTargetX = null;
+              this.lastMoveDirection = 0;
+              this.state = CharacterState.Idle;
+            } else {
+              this.x += snapDelta;
+            }
+
+            // Store position for stuck detection (will be compared after collision resolution)
+            this.lastSnapX = posBeforeMove;
+          }
+        }
+      }
+    } else {
+      // Cancel grid snap when moving
+      this.gridSnapTargetX = null;
     }
 
     // Apply gravity if not on ground

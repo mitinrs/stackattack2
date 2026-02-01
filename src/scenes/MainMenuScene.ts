@@ -524,7 +524,7 @@ export class MainMenuScene extends Scene {
   /**
    * Show the level select modal
    */
-  private showLevelSelectModal(): void {
+  public showLevelSelectModal(): void {
     if (this.levelSelectModal) {
       this.levelSelectModal.visible = true;
       this.isModalVisible = true;

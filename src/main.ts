@@ -237,10 +237,10 @@ async function createAndRegisterScenes(
     sessionState.currentLevel = 1;
     sessionState.unlockedCharacterIds = getInitialUnlockedIds();
 
-    // Reset and start new game
+    // Go to main menu and show level selection
     gameScene.reset();
-    await sceneManager.replace(SceneType.Game);
-    gameScene.initializeGame(sessionState.selectedCharacterId);
+    await sceneManager.replace(SceneType.MainMenu);
+    mainMenuScene.showLevelSelectModal();
   });
 
   gameOverScene.setOnMainMenu(async () => {
