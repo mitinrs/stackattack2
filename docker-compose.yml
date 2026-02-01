@@ -1,10 +1,6 @@
 services:
   stackattack2-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        CACHEBUST: 5
+    image: ghcr.io/mitinrs/stackattack2:latest
     container_name: stackattack2
     restart: unless-stopped
     networks:
