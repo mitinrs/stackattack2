@@ -131,3 +131,18 @@ export function getMaxLevel(): number {
 export function hasNextLevel(currentLevel: number): boolean {
   return currentLevel < getMaxLevel();
 }
+
+/**
+ * Get unlock rewards for a specific level
+ * Returns an array of character IDs that unlock at this level
+ */
+export function getLevelUnlockRewards(levelNumber: number): number[] {
+  // Character unlock mapping by level
+  const unlockMap: Record<number, number[]> = {
+    3: [3], // Level 3 unlocks Character 3 (Jumper)
+    5: [4], // Level 5 unlocks Character 4 (Strong)
+    8: [6], // Level 8 unlocks Character 6 (Master)
+  };
+
+  return unlockMap[levelNumber] || [];
+}

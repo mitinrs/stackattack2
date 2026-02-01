@@ -267,8 +267,11 @@ describe('Crate System', () => {
       crate.width = 20;
       crate.height = 16;
 
-      // Push the crate to the right
+      // Push the crate to the right (starts sliding animation)
       crateManager.pushCrates([crate], 1);
+
+      // Complete the slide to update grid position
+      crateManager.completeAutoSlide(crate);
 
       // Verify crate moved to column 6
       expect(crate.getGridColumn()).toBe(6);
@@ -288,8 +291,12 @@ describe('Crate System', () => {
       crate2.width = 20;
       crate2.height = 16;
 
-      // Push both crates to the right
+      // Push both crates to the right (starts sliding animation)
       crateManager.pushCrates([crate1, crate2], 1);
+
+      // Complete the slides to update grid positions (order matters: furthest first)
+      crateManager.completeAutoSlide(crate2);
+      crateManager.completeAutoSlide(crate1);
 
       // Verify crates moved
       expect(crate1.getGridColumn()).toBe(6);
@@ -333,14 +340,16 @@ describe('Crate System', () => {
       // Initially at column 5
       expect(crate.getGridColumn()).toBe(5);
 
-      // Push to the right
+      // Push to the right (starts sliding animation)
       crateManager.pushCrates([crate], 1);
+      crateManager.completeAutoSlide(crate);
 
       // Should now be at column 6
       expect(crate.getGridColumn()).toBe(6);
 
-      // Push to the left
+      // Push to the left (starts sliding animation)
       crateManager.pushCrates([crate], -1);
+      crateManager.completeAutoSlide(crate);
 
       // Should now be back at column 5
       expect(crate.getGridColumn()).toBe(5);

@@ -543,19 +543,34 @@ export class CrateManager extends Container {
 
   /**
    * Process gravity for unsupported crates after line clear
-   * Crates will fall with animation instead of teleporting
+   * Immediately moves crates to their new positions (no animation)
    */
   processGravity(): void {
-    // Need to process from bottom to top to avoid cascading issues
-    for (let row = 1; row < this.config.gridRows; row++) {
-      for (let col = 0; col < this.config.gridColumns; col++) {
-        const crate = this.grid[row][col];
-        if (crate && !this.isCellOccupied(col, row - 1)) {
-          // Remove from grid - crate will be re-added when it lands
-          this.grid[row][col] = null;
+    // Keep processing until no crates move (handle cascading)
+    let moved = true;
+    while (moved) {
+      moved = false;
+      // Process from bottom to top
+      for (let row = 1; row < this.config.gridRows; row++) {
+        for (let col = 0; col < this.config.gridColumns; col++) {
+          const crate = this.grid[row][col];
+          if (crate && !this.isCellOccupied(col, row - 1)) {
+            // Find the lowest available row
+            let targetRow = row - 1;
+            while (targetRow > 0 && !this.isCellOccupied(col, targetRow - 1)) {
+              targetRow--;
+            }
 
-          // Start falling animation (crate will land naturally via update loop)
-          crate.resumeFalling();
+            // Remove from old position
+            this.grid[row][col] = null;
+
+            // Move to new position
+            this.grid[targetRow][col] = crate;
+            crate.setGridPosition(col, targetRow);
+            crate.land(this.getRowBottomY(targetRow));
+
+            moved = true;
+          }
         }
       }
     }

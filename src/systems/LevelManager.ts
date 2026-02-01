@@ -4,7 +4,13 @@
  */
 
 import type { LevelConfig } from '../types/config';
-import { getLevelConfig, getLevelFallSpeed, hasNextLevel, getMaxLevel } from '../config/levels';
+import {
+  getLevelConfig,
+  getLevelFallSpeed,
+  hasNextLevel,
+  getMaxLevel,
+  getLevelUnlockRewards,
+} from '../config/levels';
 
 /**
  * Level completion bonus multiplier
@@ -199,6 +205,13 @@ export class LevelManager {
    */
   getMaxLevel(): number {
     return getMaxLevel();
+  }
+
+  /**
+   * Get unlock rewards for the current level
+   */
+  getCurrentLevelUnlockRewards(): number[] {
+    return getLevelUnlockRewards(this.currentLevel);
   }
 
   /**
