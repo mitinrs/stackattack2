@@ -1,9 +1,6 @@
 # Stage 1: Build the application
 FROM node:20-alpine AS builder
 
-# Cache buster - change to force rebuild
-ARG CACHEBUST=1
-
 WORKDIR /app
 
 # Copy package files
@@ -11,6 +8,10 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
+
+# Cache buster - invalidates cache for source code changes
+ARG CACHEBUST
+RUN echo "Cache bust: ${CACHEBUST}"
 
 # Copy source code
 COPY . .
