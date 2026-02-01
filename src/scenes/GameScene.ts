@@ -382,7 +382,7 @@ export class GameScene extends Scene {
       'crane_rail',
       this.lcdEffect.getCurrentPalette()
     );
-    const railTileHeight = 6; // 3 pixels * 2 scale
+    const _railTileHeight = 6; // 3 pixels * 2 scale
     if (railTexture) {
       const railContainer = new Container();
       const tilesNeeded = Math.ceil(LOGICAL_WIDTH / tileSize);

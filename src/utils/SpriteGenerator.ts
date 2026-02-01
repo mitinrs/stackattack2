@@ -1518,7 +1518,10 @@ export function generateAllCrateSprites(
 
   // Generate all visual variants for regular crates (opaque)
   for (let i = 0; i < CRATE_VARIANTS.length; i++) {
-    sprites.set(`crate_regular_${i}`, generateOpaqueSprite(CRATE_VARIANTS[i].pixels, colors, app, 2));
+    sprites.set(
+      `crate_regular_${i}`,
+      generateOpaqueSprite(CRATE_VARIANTS[i].pixels, colors, app, 2)
+    );
   }
   // Default regular (variant 0)
   sprites.set('crate_regular', generateOpaqueSprite(CRATE_SPRITE.pixels, colors, app, 2));
@@ -1528,9 +1531,15 @@ export function generateAllCrateSprites(
     'crate_extraPoints',
     generateOpaqueSprite(CRATE_EXTRA_POINTS_SPRITE.pixels, colors, app, 2)
   );
-  sprites.set('crate_superJump', generateOpaqueSprite(CRATE_SUPER_JUMP_SPRITE.pixels, colors, app, 2));
+  sprites.set(
+    'crate_superJump',
+    generateOpaqueSprite(CRATE_SUPER_JUMP_SPRITE.pixels, colors, app, 2)
+  );
   sprites.set('crate_helmet', generateOpaqueSprite(CRATE_HELMET_SPRITE.pixels, colors, app, 2));
-  sprites.set('crate_extraLife', generateOpaqueSprite(CRATE_EXTRA_LIFE_SPRITE.pixels, colors, app, 2));
+  sprites.set(
+    'crate_extraLife',
+    generateOpaqueSprite(CRATE_EXTRA_LIFE_SPRITE.pixels, colors, app, 2)
+  );
 
   // Bomb sprite (opaque)
   sprites.set('crate_bomb', generateOpaqueSprite(CRATE_BOMB_SPRITE.pixels, colors, app, 2));
