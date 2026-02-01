@@ -27,3 +27,11 @@ dist-ssr
 .playwright-mcp/
 sprites\ md
 agent-os/
+
+# Claude Code internal
+.claude/
+
+# Environment
+.env
+.env.local
+.env.*.local
