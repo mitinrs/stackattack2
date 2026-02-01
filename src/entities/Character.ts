@@ -343,7 +343,10 @@ export class Character extends Sprite {
           // Target is next cell in the direction we were moving
           const targetColumn = currentColumn + this.lastMoveDirection;
           // Clamp to valid column range
-          const clampedColumn = Math.max(0, Math.min(DEFAULT_GRID_CONFIG.columns - 1, targetColumn));
+          const clampedColumn = Math.max(
+            0,
+            Math.min(DEFAULT_GRID_CONFIG.columns - 1, targetColumn)
+          );
           this.gridSnapTargetX = cellCenter0 + clampedColumn * cellWidth;
           this.lastSnapX = -9999; // Initialize to impossible value
 

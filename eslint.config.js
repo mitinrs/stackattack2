@@ -18,13 +18,27 @@ export default [
         sourceType: 'module',
       },
       globals: {
+        // Browser globals
         window: 'readonly',
         document: 'readonly',
         console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        performance: 'readonly',
+        Event: 'readonly',
+        KeyboardEvent: 'readonly',
+        TouchEvent: 'readonly',
+        PointerEvent: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        HTMLCanvasElement: 'readonly',
+        // Node globals
         process: 'readonly',
         __dirname: 'readonly',
-        HTMLButtonElement: 'readonly',
-        HTMLElement: 'readonly',
       },
     },
     plugins: {
@@ -45,6 +59,7 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-redeclare': 'off', // TypeScript handles this better
     },
   },
   prettier,

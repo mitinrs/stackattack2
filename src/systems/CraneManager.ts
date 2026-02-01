@@ -69,9 +69,8 @@ export class CraneManager extends Container {
   private attachedCrateInfo: Map<number, AttachedCrateInfo>;
 
   // Callback to create crate textures
-  private crateTextureCallback:
-    | ((type: CrateType, color?: CrateColor) => Texture | null)
-    | null = null;
+  private crateTextureCallback: ((type: CrateType, color?: CrateColor) => Texture | null) | null =
+    null;
 
   // Crate ID counter
   private crateIdCounter: number = 0;
@@ -94,9 +93,7 @@ export class CraneManager extends Container {
   /**
    * Set the callback for creating crate textures
    */
-  setCrateTextureCallback(
-    callback: (type: CrateType, color?: CrateColor) => Texture | null
-  ): void {
+  setCrateTextureCallback(callback: (type: CrateType, color?: CrateColor) => Texture | null): void {
     this.crateTextureCallback = callback;
   }
 

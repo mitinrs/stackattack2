@@ -770,7 +770,10 @@ export class GameScene extends Scene {
         // Set up crate texture callback for crane manager
         this.craneManager.setCrateTextureCallback((type, color) => {
           if (type === 'regular' && color) {
-            return this.assetLoader!.getColoredCrateSprite(color, this.lcdEffect.getCurrentPalette());
+            return this.assetLoader!.getColoredCrateSprite(
+              color,
+              this.lcdEffect.getCurrentPalette()
+            );
           } else if (type === 'bomb') {
             return this.assetLoader!.getBombCrateSprite(this.lcdEffect.getCurrentPalette());
           } else {

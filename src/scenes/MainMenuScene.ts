@@ -653,15 +653,19 @@ export class MainMenuScene extends Scene {
           break;
         case 'ArrowDown':
           event.preventDefault();
-          this.selectedLevelIndex = Math.min(this.levelButtons.length - 1, this.selectedLevelIndex + 1);
+          this.selectedLevelIndex = Math.min(
+            this.levelButtons.length - 1,
+            this.selectedLevelIndex + 1
+          );
           this.updateLevelButtonHighlight();
           break;
         case 'Enter':
-        case ' ':
+        case ' ': {
           event.preventDefault();
           const levels = [1, 3, 5];
           this.startGameWithLevel(levels[this.selectedLevelIndex]);
           break;
+        }
       }
       return;
     }

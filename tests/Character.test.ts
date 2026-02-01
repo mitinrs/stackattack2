@@ -2,7 +2,7 @@
  * Tests for Character System
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Character, CharacterState } from '../src/entities/Character';
 import {
   CHARACTERS,
@@ -32,13 +32,11 @@ describe('Character System', () => {
     });
 
     it('should move left when moveLeft is called', () => {
-      const initialX = character.x;
       character.moveLeft(0.016); // ~1 frame at 60fps
       expect(character.getVelocity().x).toBeLessThan(0);
     });
 
     it('should move right when moveRight is called', () => {
-      const initialX = character.x;
       character.moveRight(0.016);
       expect(character.getVelocity().x).toBeGreaterThan(0);
     });

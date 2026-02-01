@@ -47,7 +47,9 @@ async function initializeGame() {
   // Load saved palette from cookies FIRST, before creating any scenes
   const savedPalette = GameStorage.getPalette();
   const initialPalette =
-    savedPalette && Object.values(ColorPalette).includes(savedPalette) ? savedPalette : ColorPalette.Blue;
+    savedPalette && Object.values(ColorPalette).includes(savedPalette)
+      ? savedPalette
+      : ColorPalette.Blue;
 
   // Initialize LCD effect system with saved or default palette
   lcdEffect = new LCDEffect(initialPalette);
@@ -163,7 +165,6 @@ async function initializeGame() {
     // Transition to main menu
     await sceneManager.replace(SceneType.MainMenu);
   });
-
 }
 
 /**
@@ -315,11 +316,7 @@ function setupMobileControls(): void {
   }
 
   // Helper to handle press/release for movement buttons
-  const setupButton = (
-    btn: HTMLElement,
-    action: InputAction,
-    _name: string
-  ) => {
+  const setupButton = (btn: HTMLElement, action: InputAction, _name: string) => {
     const handlePress = (e: Event) => {
       e.preventDefault();
       btn.classList.add('pressed');

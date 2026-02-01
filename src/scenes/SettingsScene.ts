@@ -246,7 +246,12 @@ export class SettingsScene extends Scene {
       for (let y = 0; y < floorPixels.length; y++) {
         for (let x = 0; x < floorPixels[y].length; x++) {
           if (floorPixels[y][x] === 1) {
-            this.previewFloor.rect(tileOffsetX + x * pixelSize, floorY + y * pixelSize, pixelSize, pixelSize);
+            this.previewFloor.rect(
+              tileOffsetX + x * pixelSize,
+              floorY + y * pixelSize,
+              pixelSize,
+              pixelSize
+            );
             this.previewFloor.fill({ color });
           }
         }
@@ -274,7 +279,12 @@ export class SettingsScene extends Scene {
     for (let y = 0; y < charPixels.length; y++) {
       for (let x = 0; x < charPixels[y].length; x++) {
         if (charPixels[y][x] === 1) {
-          this.previewCharacter.rect(charX + x * pixelSize, charY + y * pixelSize, pixelSize, pixelSize);
+          this.previewCharacter.rect(
+            charX + x * pixelSize,
+            charY + y * pixelSize,
+            pixelSize,
+            pixelSize
+          );
           this.previewCharacter.fill({ color });
         }
       }
@@ -301,7 +311,12 @@ export class SettingsScene extends Scene {
     for (let y = 0; y < cratePixels.length; y++) {
       for (let x = 0; x < cratePixels[y].length; x++) {
         if (cratePixels[y][x] === 1) {
-          this.previewCrate.rect(crateX + x * pixelSize, crateY + y * pixelSize, pixelSize, pixelSize);
+          this.previewCrate.rect(
+            crateX + x * pixelSize,
+            crateY + y * pixelSize,
+            pixelSize,
+            pixelSize
+          );
           this.previewCrate.fill({ color });
         }
       }

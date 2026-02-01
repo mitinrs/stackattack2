@@ -4,12 +4,7 @@
  */
 
 import type { LevelConfig } from '../types/config';
-import {
-  getLevelConfig,
-  getLevelFallSpeed,
-  hasNextLevel,
-  getMaxLevel,
-} from '../config/levels';
+import { getLevelConfig, getLevelFallSpeed, hasNextLevel, getMaxLevel } from '../config/levels';
 
 /**
  * Level completion bonus multiplier

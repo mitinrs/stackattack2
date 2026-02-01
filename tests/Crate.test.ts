@@ -89,7 +89,7 @@ describe('Crate System', () => {
       const crate1 = crateManager.spawnCrate(5, CrateType.Regular, 100);
       crateManager.landCrate(crate1, 0); // First crate at row 0
 
-      const crate2 = crateManager.spawnCrate(5, CrateType.Regular, 100);
+      const _crate2 = crateManager.spawnCrate(5, CrateType.Regular, 100);
       const landingRow = crateManager.getNextLandingRow(5);
       expect(landingRow).toBe(1); // Should land on top of first crate
     });

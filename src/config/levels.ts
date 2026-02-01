@@ -131,4 +131,3 @@ export function getMaxLevel(): number {
 export function hasNextLevel(currentLevel: number): boolean {
   return currentLevel < getMaxLevel();
 }
-

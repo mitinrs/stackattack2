@@ -4,7 +4,6 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SceneManager } from '../src/systems/SceneManager';
 import { SceneType } from '../src/types/game';
 
 // Mock PixiJS modules
