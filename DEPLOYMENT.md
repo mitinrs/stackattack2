@@ -183,3 +183,191 @@ docker inspect ghcr.io/mitinrs/stackattack2:latest | grep -i created
 - **Demo:** https://stackattack2.pusk365.ru
 - **Repository:** https://github.com/mitinrs/stackattack2
 - **Docker Image:** https://ghcr.io/mitinrs/stackattack2
+
+---
+
+# Руководство по развёртыванию (RU)
+
+Это руководство описывает развёртывание Stack Attack 2 Pro на вашем сервере с использованием Docker и GitHub Actions.
+
+## Архитектура
+
+```
+Push в main/master
+    ↓
+GitHub Actions:
+    ├→ Тесты (lint, test, build)
+    └→ Сборка и push образа в ghcr.io
+        ↓
+Ваш сервер:
+    └→ Docker-контейнер (ручное или автообновление)
+        ↓
+    Reverse proxy (Traefik/Nginx) + HTTPS
+        ↓
+    https://your-domain.com
+```
+
+## Быстрый старт (готовый образ)
+
+Публичный Docker-образ доступен по адресу:
+```bash
+docker pull ghcr.io/mitinrs/stackattack2:latest
+```
+
+Запуск локально:
+```bash
+docker run -p 8080:80 ghcr.io/mitinrs/stackattack2:latest
+# Открыть http://localhost:8080
+```
+
+## Развёртывание на своём сервере
+
+### Вариант 1: Форк и свой CI/CD
+
+1. **Сделайте форк репозитория** на GitHub
+
+2. **Включите GitHub Actions** в форке (вкладка Actions → Enable)
+
+3. **GitHub Actions автоматически:**
+   - Запускает тесты при каждом push
+   - Собирает и публикует Docker-образ в `ghcr.io/<ваш-username>/stackattack2:latest`
+
+4. **Сделайте пакет публичным** (опционально, но рекомендуется):
+   - Перейдите в форк → Packages → stackattack2 → Package settings
+   - Измените visibility на Public
+
+5. **Разверните на сервере** используя образ `ghcr.io/<ваш-username>/stackattack2:latest`
+
+### Вариант 2: Использовать оригинальный образ
+
+Развёртывание с использованием готового образа из этого репозитория.
+
+## Настройка сервера с Docker Compose
+
+### docker-compose.yml
+
+```yaml
+services:
+  stackattack2:
+    image: ghcr.io/mitinrs/stackattack2:latest
+    container_name: stackattack2
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+```
+
+### С Traefik (HTTPS)
+
+```yaml
+services:
+  stackattack2:
+    image: ghcr.io/mitinrs/stackattack2:latest
+    container_name: stackattack2
+    restart: unless-stopped
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stackattack2.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.stackattack2.entrypoints=websecure"
+      - "traefik.http.routers.stackattack2.tls.certresolver=letsencrypt"
+      - "traefik.http.services.stackattack2.loadbalancer.server.port=80"
+
+networks:
+  traefik_public:
+    external: true
+```
+
+## Настройка Portainer
+
+### 1. Добавление Registry (обязательно для ghcr.io)
+
+Даже для публичных пакетов ghcr.io требует аутентификации:
+
+1. **Portainer** → **Settings** → **Registries** → **Add registry**
+2. Выберите **Custom registry**
+3. Заполните:
+   - **Name:** `GitHub Container Registry`
+   - **Registry URL:** `ghcr.io`
+   - **Authentication:** Включить
+   - **Username:** Ваш GitHub username
+   - **Password:** GitHub Personal Access Token с правом `read:packages`
+
+### 2. Создание Stack
+
+1. **Portainer** → **Stacks** → **Add stack**
+2. **Name:** `stackattack2`
+3. **Build method:** Выберите один из вариантов:
+   - **Web editor:** Вставьте содержимое docker-compose.yml
+   - **Repository:** Используйте Git URL `https://github.com/mitinrs/stackattack2`
+4. **Deploy the stack**
+
+### 3. Обновление контейнера
+
+- **Вручную:** Stacks → stackattack2 → "Pull and redeploy"
+- **Автоматически:** Используйте [Watchtower](https://containrrr.dev/watchtower/) для автообновления
+
+## Создание GitHub PAT
+
+1. GitHub → Settings → Developer settings → Personal access tokens → **Tokens (classic)**
+2. **Generate new token (classic)**
+3. Выберите scope: `read:packages`
+4. Скопируйте токен (он больше не будет показан)
+
+## Локальная разработка
+
+```bash
+# Установка зависимостей
+npm install
+
+# Запуск dev-сервера
+npm run dev
+
+# Запуск тестов
+npm run test
+
+# Сборка для production
+npm run build
+
+# Сборка Docker-образа локально
+docker build -t stackattack2 .
+
+# Запуск локальной Docker-сборки
+docker run -p 8080:80 stackattack2
+```
+
+## Решение проблем
+
+### Ошибка при pull образа
+
+```
+Error: denied: denied
+```
+
+**Решение:** Добавьте ghcr.io registry с аутентификацией в Portainer (см. выше).
+
+### Контейнер не обновляется
+
+```bash
+# Принудительный pull и пересоздание
+docker pull ghcr.io/mitinrs/stackattack2:latest
+docker compose up -d --force-recreate
+```
+
+### Просмотр логов контейнера
+
+```bash
+docker logs stackattack2
+```
+
+### Проверка версии образа
+
+```bash
+docker inspect ghcr.io/mitinrs/stackattack2:latest | grep -i created
+```
+
+## Ссылки
+
+- **Демо:** https://stackattack2.pusk365.ru
+- **Репозиторий:** https://github.com/mitinrs/stackattack2
+- **Docker-образ:** https://ghcr.io/mitinrs/stackattack2
