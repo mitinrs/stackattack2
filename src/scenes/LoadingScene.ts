@@ -4,9 +4,10 @@
  * Shows progress bar and loading text with LCD aesthetic.
  */
 
-import { Graphics, Text, TextStyle, Container } from 'pixi.js';
+import { Graphics, Text, TextStyle, Container, Sprite, Application, RenderTexture } from 'pixi.js';
 import { Scene } from './Scene';
 import { SceneType } from '../types/game';
+import { generateLogoSprite, getLogoDimensions } from '../utils/SpriteGenerator';
 
 // Game area constants
 const LOGICAL_WIDTH = 240;
@@ -20,6 +21,11 @@ export class LoadingScene extends Scene {
   private progressBarFill: Graphics | null = null;
   private statusText: Text | null = null;
   private percentageText: Text | null = null;
+  private logoSprite: Sprite | null = null;
+  private logoTexture: RenderTexture | null = null;
+
+  // App reference for sprite generation
+  private app: Application | null = null;
 
   // Loading state
   private progress: number = 0;
@@ -40,6 +46,13 @@ export class LoadingScene extends Scene {
 
   constructor() {
     super(SceneType.Loading);
+  }
+
+  /**
+   * Set the app reference for sprite generation
+   */
+  setApp(app: Application): void {
+    this.app = app;
   }
 
   /**
@@ -66,23 +79,47 @@ export class LoadingScene extends Scene {
     this.background.fill({ color: this.colors.background });
     this.container.addChild(this.background);
 
-    // Create game title
-    const titleStyle = new TextStyle({
-      fontFamily: 'monospace',
-      fontSize: 16,
-      fill: this.colors.accent,
-      align: 'center',
-      fontWeight: 'bold',
-      letterSpacing: 1,
-    });
+    // Create game title logo sprite
+    if (this.app) {
+      const paletteColors = {
+        foreground: this.colors.foreground,
+        background: this.colors.background,
+        accent: this.colors.accent,
+        glow: this.colors.accent,
+      };
 
-    const title = new Text({
-      text: 'STACK ATTACK\n2 PRO',
-      style: titleStyle,
-    });
-    title.anchor.set(0.5);
-    title.position.set(LOGICAL_WIDTH / 2, 80);
-    this.container.addChild(title);
+      // Generate logo at scale 2 for better visibility
+      this.logoTexture = generateLogoSprite(paletteColors, this.app, 2);
+      this.logoSprite = new Sprite(this.logoTexture);
+      this.logoSprite.anchor.set(0.5);
+      this.logoSprite.position.set(LOGICAL_WIDTH / 2, 75);
+
+      // Scale down to fit the loading screen nicely (logo is 150*2 = 300 wide)
+      const targetWidth = 200;
+      const logoDims = getLogoDimensions();
+      const scale = targetWidth / (logoDims.width * 2);
+      this.logoSprite.scale.set(scale);
+
+      this.container.addChild(this.logoSprite);
+    } else {
+      // Fallback to text if app not available
+      const titleStyle = new TextStyle({
+        fontFamily: 'monospace',
+        fontSize: 16,
+        fill: this.colors.foreground,
+        align: 'center',
+        fontWeight: 'bold',
+        letterSpacing: 1,
+      });
+
+      const title = new Text({
+        text: 'STACK ATTACK\n2 PRO',
+        style: titleStyle,
+      });
+      title.anchor.set(0.5);
+      title.position.set(LOGICAL_WIDTH / 2, 80);
+      this.container.addChild(title);
+    }
 
     // Create loading text
     this.loadingText = new Text({
@@ -135,7 +172,7 @@ export class LoadingScene extends Scene {
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 9,
-        fill: this.colors.accent,
+        fill: this.colors.foreground,
         align: 'center',
       }),
     });
@@ -293,6 +330,25 @@ export class LoadingScene extends Scene {
       this.background.fill({ color: colors.background });
     }
 
+    // Update logo sprite with new palette colors
+    if (this.app && this.logoSprite) {
+      const paletteColors = {
+        foreground: colors.foreground,
+        background: colors.background,
+        accent: colors.accent,
+        glow: colors.accent,
+      };
+
+      // Destroy old texture
+      if (this.logoTexture) {
+        this.logoTexture.destroy();
+      }
+
+      // Generate new logo with updated colors
+      this.logoTexture = generateLogoSprite(paletteColors, this.app, 2);
+      this.logoSprite.texture = this.logoTexture;
+    }
+
     if (this.loadingText) {
       this.loadingText.style.fill = colors.foreground;
     }
@@ -313,7 +369,7 @@ export class LoadingScene extends Scene {
     }
 
     if (this.statusText) {
-      this.statusText.style.fill = colors.accent;
+      this.statusText.style.fill = colors.foreground;
     }
 
     this.updateProgressBar();
@@ -345,7 +401,14 @@ export class LoadingScene extends Scene {
     window.removeEventListener('keydown', this.handleKeyPress);
     window.removeEventListener('pointerdown', this.handlePointerDown);
 
+    // Clean up logo texture
+    if (this.logoTexture) {
+      this.logoTexture.destroy();
+      this.logoTexture = null;
+    }
+
     this.onLoadComplete = null;
+    this.app = null;
 
     super.destroy();
   }

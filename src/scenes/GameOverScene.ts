@@ -132,7 +132,7 @@ export class GameOverScene extends Scene {
     const titleStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 20,
-      fill: colors.accent,
+      fill: colors.foreground,
       align: 'center',
       fontWeight: 'bold',
     });
@@ -173,7 +173,7 @@ export class GameOverScene extends Scene {
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 12,
-        fill: colors.accent,
+        fill: colors.foreground,
         align: 'center',
         fontWeight: 'bold',
       }),
@@ -412,11 +412,11 @@ export class GameOverScene extends Scene {
     }
 
     if (this.titleText) {
-      this.titleText.style.fill = colors.accent;
+      this.titleText.style.fill = colors.foreground;
     }
 
     if (this.newHighScoreText) {
-      this.newHighScoreText.style.fill = colors.accent;
+      this.newHighScoreText.style.fill = colors.foreground;
     }
 
     if (this.scoreText) {

@@ -118,7 +118,7 @@ export class CharacterSelectScene extends Scene {
     const titleStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 14,
-      fill: colors.accent,
+      fill: colors.foreground,
       align: 'center',
       fontWeight: 'bold',
     });
@@ -363,7 +363,7 @@ export class CharacterSelectScene extends Scene {
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 9,
-        fill: colors.accent,
+        fill: colors.foreground,
         align: 'center',
         fontWeight: 'bold',
       }),
@@ -616,7 +616,7 @@ export class CharacterSelectScene extends Scene {
       this.attributeNameText.text = isLocked
         ? `${char.name.toUpperCase()} (LOCKED)`
         : char.name.toUpperCase();
-      this.attributeNameText.style.fill = isLocked ? colors.foreground : colors.accent;
+      this.attributeNameText.style.fill = colors.foreground;
     }
 
     // Update attribute bars (show even for locked characters)
@@ -756,7 +756,7 @@ export class CharacterSelectScene extends Scene {
     }
 
     if (this.titleText) {
-      this.titleText.style.fill = colors.accent;
+      this.titleText.style.fill = colors.foreground;
     }
 
     // Update character cards

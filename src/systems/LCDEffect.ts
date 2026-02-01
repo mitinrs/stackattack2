@@ -29,12 +29,12 @@ const BLUE_PALETTE: PaletteColors = {
   glow: 0x8ed0e8, // Lighter cyan for center glow
 };
 
-// Amber LCD palette - authentic backlit LCD style (like Nokia 3310)
+// Amber LCD palette - Siemens A50 style orange LCD
 const AMBER_PALETTE: PaletteColors = {
-  background: 0xc8b898, // Greenish-gray LCD background (classic Nokia style)
+  background: 0xe8621f, // Siemens A50 orange LCD background
   foreground: 0x1a1810, // Near-black for game elements
-  accent: 0x5a5848, // Dark gray for mid-tones
-  glow: 0xd8c8a8, // Lighter for center glow
+  accent: 0xb84a18, // Darker orange for mid-tones
+  glow: 0xf58040, // Lighter orange for center glow
 };
 
 export class LCDEffect extends EventEmitter {

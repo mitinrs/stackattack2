@@ -99,6 +99,7 @@ async function initializeGame() {
 
   // Create and show loading scene immediately
   const loadingScene = new LoadingScene();
+  loadingScene.setApp(app);
   loadingScene.setColors(colors);
   sceneManager.registerScene(loadingScene);
 

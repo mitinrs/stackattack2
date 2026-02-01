@@ -19,6 +19,7 @@ export class MainMenuScene extends Scene {
   private background: Graphics | null = null;
   private titleText: Text | null = null;
   private subtitleText: Text | null = null;
+  private studioText: Text | null = null;
   private buttons: ButtonContainer[] = [];
   private selectedIndex: number = 0;
 
@@ -70,7 +71,7 @@ export class MainMenuScene extends Scene {
     const titleStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 18,
-      fill: colors.accent,
+      fill: colors.foreground,
       align: 'center',
       fontWeight: 'bold',
       letterSpacing: 1,
@@ -100,6 +101,21 @@ export class MainMenuScene extends Scene {
     this.subtitleText.anchor.set(0.5);
     this.subtitleText.position.set(120, 95);
     this.container.addChild(this.subtitleText);
+
+    // Studio credit at the bottom
+    this.studioText = new Text({
+      text: 'LIME studio',
+      style: new TextStyle({
+        fontFamily: 'monospace',
+        fontSize: 8,
+        fill: colors.foreground,
+        align: 'center',
+      }),
+    });
+    this.studioText.anchor.set(0.5);
+    this.studioText.position.set(120, 310);
+    this.studioText.alpha = 0.6;
+    this.container.addChild(this.studioText);
 
     // Create menu buttons
     const buttonLabels: { text: string; action: MainMenuAction }[] = [
@@ -224,7 +240,7 @@ export class MainMenuScene extends Scene {
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 14,
-        fill: colors.accent,
+        fill: colors.foreground,
         align: 'center',
         fontWeight: 'bold',
       }),
@@ -322,7 +338,7 @@ export class MainMenuScene extends Scene {
         style: new TextStyle({
           fontFamily: 'monospace',
           fontSize: 9,
-          fill: colors.accent,
+          fill: colors.foreground,
           align: 'left',
         }),
       });
@@ -380,7 +396,7 @@ export class MainMenuScene extends Scene {
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 14,
-        fill: colors.accent,
+        fill: colors.foreground,
         align: 'center',
         fontWeight: 'bold',
       }),
@@ -724,11 +740,15 @@ export class MainMenuScene extends Scene {
     }
 
     if (this.titleText) {
-      this.titleText.style.fill = colors.accent;
+      this.titleText.style.fill = colors.foreground;
     }
 
     if (this.subtitleText) {
       this.subtitleText.style.fill = colors.foreground;
+    }
+
+    if (this.studioText) {
+      this.studioText.style.fill = colors.foreground;
     }
 
     this.updateButtonHighlight();
@@ -760,7 +780,7 @@ export class MainMenuScene extends Scene {
     }
 
     if (modal.titleText) {
-      modal.titleText.style.fill = colors.accent;
+      modal.titleText.style.fill = colors.foreground;
     }
 
     if (modal.backBg) {
@@ -798,11 +818,11 @@ export class MainMenuScene extends Scene {
       const boxY = (320 - boxHeight) / 2;
       modal.modalBox.rect(boxX, boxY, boxWidth, boxHeight);
       modal.modalBox.fill({ color: colors.background });
-      modal.modalBox.stroke({ color: colors.accent, width: 3 });
+      modal.modalBox.stroke({ color: colors.foreground, width: 3 });
     }
 
     if (modal.titleText) {
-      modal.titleText.style.fill = colors.accent;
+      modal.titleText.style.fill = colors.foreground;
     }
 
     // Refresh scores display with new colors

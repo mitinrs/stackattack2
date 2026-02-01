@@ -8,6 +8,7 @@ import { Graphics, Text, TextStyle, Container } from 'pixi.js';
 import { Scene } from './Scene';
 import { SceneType } from '../types/game';
 import { LCDEffect, ColorPalette } from '../systems/LCDEffect';
+import { SPRITE_DEFINITIONS } from '../utils/SpriteGenerator';
 
 export class SettingsScene extends Scene {
   private lcdEffect: LCDEffect;
@@ -21,6 +22,7 @@ export class SettingsScene extends Scene {
   private previewBox: Graphics | null = null;
   private previewCharacter: Graphics | null = null;
   private previewCrate: Graphics | null = null;
+  private previewFloor: Graphics | null = null;
   private backButton: ButtonContainer | null = null;
 
   private selectedOptionIndex: number = 0; // 0 = blue, 1 = amber, 2 = back
@@ -56,7 +58,7 @@ export class SettingsScene extends Scene {
     const titleStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 18,
-      fill: colors.accent,
+      fill: colors.foreground,
       align: 'center',
       fontWeight: 'bold',
     });
@@ -206,7 +208,12 @@ export class SettingsScene extends Scene {
     previewLabel.position.set(0, -28);
     previewContainer.addChild(previewLabel);
 
-    // Preview character (simple pixel art representation)
+    // Preview floor (fragment under character and crate)
+    this.previewFloor = new Graphics();
+    this.drawPreviewFloor(colors.foreground);
+    previewContainer.addChild(this.previewFloor);
+
+    // Preview character (using actual sprite data)
     this.previewCharacter = new Graphics();
     this.drawPreviewCharacter(colors.foreground);
     previewContainer.addChild(this.previewCharacter);
@@ -220,48 +227,85 @@ export class SettingsScene extends Scene {
   }
 
   /**
-   * Draw a simple character preview
+   * Draw floor fragment preview using actual sprite data
+   */
+  private drawPreviewFloor(color: number): void {
+    if (!this.previewFloor) return;
+
+    this.previewFloor.clear();
+
+    const floorPixels = SPRITE_DEFINITIONS.floorTile.pixels;
+    const pixelSize = 2;
+    const tileWidth = 8 * pixelSize; // 16px per tile
+    const floorY = 10; // Floor top position
+
+    // Draw 4 floor tiles (64px width, enough for character + crate)
+    const startX = -32; // Center the floor
+    for (let tile = 0; tile < 4; tile++) {
+      const tileOffsetX = startX + tile * tileWidth;
+      for (let y = 0; y < floorPixels.length; y++) {
+        for (let x = 0; x < floorPixels[y].length; x++) {
+          if (floorPixels[y][x] === 1) {
+            this.previewFloor.rect(tileOffsetX + x * pixelSize, floorY + y * pixelSize, pixelSize, pixelSize);
+            this.previewFloor.fill({ color });
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Draw character preview using actual sprite data (idle_front - looking at camera)
    */
   private drawPreviewCharacter(color: number): void {
     if (!this.previewCharacter) return;
 
     this.previewCharacter.clear();
-    this.previewCharacter.position.set(-40, 0);
 
-    // Simple pixel character shape
-    // Head
-    this.previewCharacter.rect(-4, -12, 8, 8);
-    this.previewCharacter.fill({ color });
+    const charPixels = SPRITE_DEFINITIONS.characterAnimations.idle_front.pixels;
+    const pixelSize = 2;
+    const charHeight = charPixels.length * pixelSize; // 32px
+    const floorY = 10;
 
-    // Body
-    this.previewCharacter.rect(-6, -4, 12, 12);
-    this.previewCharacter.fill({ color });
+    // Position character standing on floor, left side
+    const charX = -24;
+    const charY = floorY - charHeight;
 
-    // Legs
-    this.previewCharacter.rect(-6, 8, 4, 8);
-    this.previewCharacter.fill({ color });
-    this.previewCharacter.rect(2, 8, 4, 8);
-    this.previewCharacter.fill({ color });
+    for (let y = 0; y < charPixels.length; y++) {
+      for (let x = 0; x < charPixels[y].length; x++) {
+        if (charPixels[y][x] === 1) {
+          this.previewCharacter.rect(charX + x * pixelSize, charY + y * pixelSize, pixelSize, pixelSize);
+          this.previewCharacter.fill({ color });
+        }
+      }
+    }
   }
 
   /**
-   * Draw a simple crate preview
+   * Draw crate preview using actual sprite data
    */
   private drawPreviewCrate(color: number): void {
     if (!this.previewCrate) return;
 
     this.previewCrate.clear();
-    this.previewCrate.position.set(40, 0);
 
-    // Crate rectangle
-    this.previewCrate.rect(-12, -8, 24, 16);
-    this.previewCrate.fill({ color });
+    const cratePixels = SPRITE_DEFINITIONS.crate.pixels;
+    const pixelSize = 2;
+    const crateHeight = cratePixels.length * pixelSize; // 16px
+    const floorY = 10;
 
-    // Cross pattern on crate (darker)
-    this.previewCrate.rect(-10, -1, 20, 2);
-    this.previewCrate.fill({ color: 0x000000, alpha: 0.3 });
-    this.previewCrate.rect(-1, -6, 2, 12);
-    this.previewCrate.fill({ color: 0x000000, alpha: 0.3 });
+    // Position crate next to character on floor
+    const crateX = 8;
+    const crateY = floorY - crateHeight;
+
+    for (let y = 0; y < cratePixels.length; y++) {
+      for (let x = 0; x < cratePixels[y].length; x++) {
+        if (cratePixels[y][x] === 1) {
+          this.previewCrate.rect(crateX + x * pixelSize, crateY + y * pixelSize, pixelSize, pixelSize);
+          this.previewCrate.fill({ color });
+        }
+      }
+    }
   }
 
   /**
@@ -476,7 +520,7 @@ export class SettingsScene extends Scene {
     }
 
     if (this.titleText) {
-      this.titleText.style.fill = colors.accent;
+      this.titleText.style.fill = colors.foreground;
     }
 
     if (this.paletteLabel) {
@@ -519,6 +563,7 @@ export class SettingsScene extends Scene {
     }
 
     // Update preview elements
+    this.drawPreviewFloor(colors.foreground);
     this.drawPreviewCharacter(colors.foreground);
     this.drawPreviewCrate(colors.foreground);
 
@@ -579,6 +624,11 @@ export class SettingsScene extends Scene {
     if (this.previewCrate) {
       this.previewCrate.destroy();
       this.previewCrate = null;
+    }
+
+    if (this.previewFloor) {
+      this.previewFloor.destroy();
+      this.previewFloor = null;
     }
 
     if (this.backButton) {

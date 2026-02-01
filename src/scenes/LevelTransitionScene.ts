@@ -87,7 +87,7 @@ export class LevelTransitionScene extends Scene {
     const congratsStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 18,
-      fill: colors.accent,
+      fill: colors.foreground,
       align: 'center',
       fontWeight: 'bold',
     });
@@ -138,7 +138,7 @@ export class LevelTransitionScene extends Scene {
       style: new TextStyle({
         fontFamily: 'monospace',
         fontSize: 12,
-        fill: colors.accent,
+        fill: colors.foreground,
         align: 'center',
       }),
     });
@@ -281,7 +281,7 @@ export class LevelTransitionScene extends Scene {
     }
 
     if (this.congratsText) {
-      this.congratsText.style.fill = colors.accent;
+      this.congratsText.style.fill = colors.foreground;
     }
 
     if (this.levelText) {
@@ -293,7 +293,7 @@ export class LevelTransitionScene extends Scene {
     }
 
     if (this.bonusText) {
-      this.bonusText.style.fill = colors.accent;
+      this.bonusText.style.fill = colors.foreground;
     }
 
     if (this.nextLevelText) {

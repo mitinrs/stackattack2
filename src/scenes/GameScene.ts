@@ -497,7 +497,7 @@ export class GameScene extends Scene {
     const titleStyle = new TextStyle({
       fontFamily: 'monospace',
       fontSize: 14,
-      fill: colors.accent,
+      fill: colors.foreground,
       fontWeight: 'bold',
     });
 
@@ -1520,7 +1520,7 @@ export class GameScene extends Scene {
 
     // Check if there's a blocking crate in the target column at the same height or lower
     const crateY = crate.y;
-    const crateSize = DEFAULT_GRID_CONFIG.crateSize;
+    const crateSize = DEFAULT_GRID_CONFIG.cellWidth;
 
     // Get the height of the stack in target column
     const stackHeight = this.crateManager.getColumnHeight(targetColumn);
@@ -1936,6 +1936,18 @@ export class GameScene extends Scene {
     }
     if (this.livesText) {
       this.livesText.style.fill = colors.background;
+    }
+
+    // Recreate pause overlay with new colors
+    const wasPauseVisible = this.isPauseVisible;
+    if (this.pauseOverlay) {
+      this.pauseLayer.removeChild(this.pauseOverlay);
+      this.pauseOverlay.destroy({ children: true });
+      this.pauseOverlay = null;
+    }
+    this.createPauseOverlay(colors);
+    if (wasPauseVisible) {
+      this.showPauseOverlay();
     }
 
     // Update character sprite using animation system

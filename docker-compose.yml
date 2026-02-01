@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        CACHEBUST: 4
+        CACHEBUST: 5
     container_name: stackattack2
     restart: unless-stopped
     networks:
