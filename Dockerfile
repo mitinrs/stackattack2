@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN npm run build && ls -la dist/
 
 # Stage 2: Production image with nginx
 FROM nginx:alpine AS runner
