@@ -35,3 +35,6 @@ agent-os/
 .env
 .env.local
 .env.*.local
+
+# Security reports (confidential)
+report/
